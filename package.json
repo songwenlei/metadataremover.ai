@@ -1,0 +1,44 @@
+{
+  "name": "metadataremover-ai-toolkit",
+  "version": "0.1.0",
+  "description": "Local, privacy-first tools for inspecting image metadata.",
+  "type": "module",
+  "bin": {
+    "metadata-check": "./bin/metadata-check.js"
+  },
+  "scripts": {
+    "check": "node --check bin/metadata-check.js && node --check src/inspector.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "exif",
+    "metadata",
+    "privacy",
+    "gps",
+    "jpeg",
+    "png",
+    "webp",
+    "xmp",
+    "iptc",
+    "ai-metadata"
+  ],
+  "homepage": "https://metadataremover.ai/",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/songwenlei/metadataremover.ai.git"
+  },
+  "bugs": {
+    "url": "https://github.com/songwenlei/metadataremover.ai/issues"
+  },
+  "license": "MIT"
+}
+
