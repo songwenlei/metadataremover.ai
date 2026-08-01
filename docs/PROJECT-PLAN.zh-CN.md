@@ -25,7 +25,7 @@
 
 README、工具文档、示例、Release Notes 和包元数据都可以加入站点链接。链接应作为“在线使用”“继续清理”“查看完整说明”等自然下一步，而不是重复堆砌。
 
-## 首个工具
+## 已同步工具
 
 Image Metadata Privacy Checker 对应网站首页的图片元数据能力，负责本地检查：
 
@@ -36,9 +36,19 @@ Image Metadata Privacy Checker 对应网站首页的图片元数据能力，负�
 
 检查器发现风险后，引导用户前往首页的在线清理器。机器可读的 JSON 输出不包含推广链接。
 
+网站新增的两个公开工具也已同步到本地：
+
+- `metadata-view` 对应 Metadata Viewer，读取支持的 EXIF/GPS 字段、PNG 文本、XMP 原始包、容器与来源标记，并支持 JSON/CSV 导出；
+- `exif-remove` 对应 EXIF Remover，无损移除 JPEG APP1、PNG `eXIf`、WebP `EXIF` 容器并复扫验证；非标准 Orientation 默认拒绝，避免静默改变显示方向。
+
+对应在线入口：
+
+- `https://metadataremover.ai/metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=metadata_viewer`
+- `https://metadataremover.ai/exif-remover?utm_source=github&utm_medium=referral&utm_campaign=exif_remover`
+
 ## 后续路线图
 
-1. 本地 `clean`：无损移除支持的隐私元数据；
+1. 本地通用 `clean`：在 EXIF-only 之外，无损移除更多支持的隐私元数据；
 2. `verify`：对比清理前后并生成验证报告；
 3. `scan`：递归扫描目录中的图片风险；
 4. GitHub Action：阻止含敏感元数据的图片进入仓库；
@@ -57,4 +67,3 @@ Image Metadata Privacy Checker 对应网站首页的图片元数据能力，负�
 `https://metadataremover.ai/?utm_source=github&utm_medium=referral&utm_campaign=metadata_checker`
 
 包的 `homepage` 使用 canonical URL；README、文档和 CLI 的人类可读提示可使用 UTM 链接。不得在 JSON 输出中加入营销字段。
-

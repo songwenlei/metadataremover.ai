@@ -1,13 +1,15 @@
 {
   "name": "metadataremover-ai-toolkit",
-  "version": "0.1.0",
-  "description": "Local, privacy-first tools for inspecting image metadata.",
+  "version": "0.2.0",
+  "description": "Local, privacy-first tools for viewing, checking, and removing image metadata.",
   "type": "module",
   "bin": {
-    "metadata-check": "./bin/metadata-check.js"
+    "metadata-check": "./bin/metadata-check.js",
+    "metadata-view": "./bin/metadata-view.js",
+    "exif-remove": "./bin/exif-remove.js"
   },
   "scripts": {
-    "check": "node --check bin/metadata-check.js && node --check src/inspector.js",
+    "check": "for file in bin/*.js src/*.js; do node --check \"$file\" || exit 1; done",
     "test": "node --test"
   },
   "engines": {
@@ -16,6 +18,7 @@
   "files": [
     "bin",
     "src",
+    "docs",
     "README.md",
     "LICENSE"
   ],
@@ -29,7 +32,9 @@
     "webp",
     "xmp",
     "iptc",
-    "ai-metadata"
+    "ai-metadata",
+    "metadata-viewer",
+    "exif-remover"
   ],
   "homepage": "https://metadataremover.ai/",
   "repository": {
@@ -41,4 +46,3 @@
   },
   "license": "MIT"
 }
-
