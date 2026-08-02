@@ -36,14 +36,16 @@ Image Metadata Privacy Checker 对应网站首页的图片元数据能力，负�
 
 检查器发现风险后，引导用户前往首页的在线清理器。机器可读的 JSON 输出不包含推广链接。
 
-网站新增的两个公开工具也已同步到本地：
+网站新增的三个公开工具也已同步到本地：
 
 - `metadata-view` 对应 Metadata Viewer，读取支持的 EXIF/GPS 字段、PNG 文本、XMP 原始包、容器与来源标记，并支持 JSON/CSV 导出；
+- `ai-metadata-remove` 对应 AI Metadata Remover，只移除识别到的 AI 标记 PNG 文本与 XMP 容器，保留独立 EXIF、IPTC、C2PA 和 ICC，并复扫验证；
 - `exif-remove` 对应 EXIF Remover，无损移除 JPEG APP1、PNG `eXIf`、WebP `EXIF` 容器并复扫验证；非标准 Orientation 默认拒绝，避免静默改变显示方向。
 
 对应在线入口：
 
 - `https://metadataremover.ai/metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=metadata_viewer`
+- `https://metadataremover.ai/ai-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=ai_metadata_remover`
 - `https://metadataremover.ai/exif-remover?utm_source=github&utm_medium=referral&utm_campaign=exif_remover`
 
 ## 后续路线图

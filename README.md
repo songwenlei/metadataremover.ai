@@ -2,7 +2,7 @@
 
 Local, privacy-first tools for inspecting and removing hidden image metadata. Every command works on your device, with no file uploads, telemetry, or account.
 
-Prefer a browser? Use the [online Metadata Viewer](https://metadataremover.ai/metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=metadata_viewer), the focused [online EXIF Remover](https://metadataremover.ai/exif-remover?utm_source=github&utm_medium=referral&utm_campaign=exif_remover), or the [full metadata cleaner](https://metadataremover.ai/?utm_source=github&utm_medium=referral&utm_campaign=metadata_checker). Image processing stays local in your browser.
+Prefer a browser? Use the [online Metadata Viewer](https://metadataremover.ai/metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=metadata_viewer), [AI Metadata Remover](https://metadataremover.ai/ai-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=ai_metadata_remover), focused [EXIF Remover](https://metadataremover.ai/exif-remover?utm_source=github&utm_medium=referral&utm_campaign=exif_remover), or the [full metadata cleaner](https://metadataremover.ai/?utm_source=github&utm_medium=referral&utm_campaign=metadata_checker). Image processing stays local in your browser.
 
 ## Included tools
 
@@ -10,6 +10,7 @@ Prefer a browser? Use the [online Metadata Viewer](https://metadataremover.ai/me
 | --- | --- | --- |
 | `metadata-check` | Find privacy-sensitive metadata categories in build scripts and sharing checks | No |
 | `metadata-view` | Review supported EXIF/GPS values, text metadata, containers, and provenance markers; export JSON or CSV | No |
+| `ai-metadata-remove` | Remove recognized prompts, parameters, and workflow containers while keeping unrelated metadata | Writes a new copy |
 | `exif-remove` | Remove complete EXIF containers from a verified JPEG, PNG, or WebP copy | Writes a new copy |
 
 ## Quick start
@@ -17,13 +18,14 @@ Prefer a browser? Use the [online Metadata Viewer](https://metadataremover.ai/me
 Requires Node.js 20 or newer.
 
 ```bash
-git clone git@github.com:songwenlei/metadataremover.ai.git
+git clone https://github.com/songwenlei/metadataremover.ai.git
 cd metadataremover.ai
 npm install
 npm link
 
 metadata-check photo.jpg
 metadata-view photo.jpg
+ai-metadata-remove generated.png
 exif-remove photo.jpg
 ```
 
@@ -32,6 +34,7 @@ You can also run every command directly from the cloned repository:
 ```bash
 node ./bin/metadata-check.js photo.jpg
 node ./bin/metadata-view.js photo.jpg
+node ./bin/ai-metadata-remove.js generated.png
 node ./bin/exif-remove.js photo.jpg
 ```
 
@@ -83,6 +86,30 @@ For a visual, searchable report with local JSON and CSV export, open the [free b
 
 See [Metadata Viewer technical limits](docs/metadata-view.md).
 
+## AI Metadata Remover
+
+`ai-metadata-remove` removes recognized AI-generation recipe containers from a verified copy while preserving unrelated metadata by default.
+
+```bash
+ai-metadata-remove generated.png
+ai-metadata-remove --output share.webp generated.webp
+ai-metadata-remove --json generated.jpg
+```
+
+The default output is `generated.no-ai-metadata.png`. Existing output files are protected unless `--force` is supplied, and the input path can never be used as the output path.
+
+| Format | AI-only operation |
+| --- | --- |
+| JPEG | Removes XMP APP1 segments containing recognized prompts, seeds, samplers, workflows, generator names, or AI provenance source values |
+| PNG | Removes recognized AI-marked `tEXt`, `zTXt`, and `iTXt` chunks, including common parameter, prompt, and workflow keys |
+| WebP | Removes recognized AI-marked `XMP ` chunks and clears the VP8X XMP flag only when no other XMP chunk remains |
+
+Separate EXIF, GPS, IPTC, generic text, JPEG comments, C2PA/JUMBF, and ICC profiles stay in the AI-only path. Because cleanup happens at the container level, unrelated values sharing a selected AI-marked text or XMP container leave with it. The output is scanned again before it is written.
+
+For an interactive review and the option to choose a broader cleanup scope, use the [online AI Metadata Remover](https://metadataremover.ai/ai-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=ai_metadata_remover).
+
+See [AI Metadata Remover technical limits](docs/ai-metadata-remove.md).
+
 ## EXIF Remover
 
 `exif-remove` removes the complete supported EXIF container and verifies the new copy before writing it. The original path can never be used as the output path.
@@ -113,6 +140,7 @@ See [EXIF Remover technical limits](docs/exif-remove.md).
 - C2PA/JUMBF detection does not validate cryptographic signatures, trust chains, or claims.
 - These tools do not detect or remove pixel-level watermarks such as Google SynthID.
 - HEIC, HEIF, AVIF, video, PDF, and Office documents are not supported.
+- `ai-metadata-remove` targets recognized PNG text and XMP containers only; it does not remove separate EXIF, C2PA, ICC, comments, or platform-side AI labels.
 - `exif-remove` removes EXIF only; use the [full browser cleaner](https://metadataremover.ai/?utm_source=github&utm_medium=referral&utm_campaign=metadata_checker) when you also need to remove supported XMP, IPTC, AI text, comments, or provenance containers.
 - Machine-readable JSON and CSV output never contains promotional links.
 

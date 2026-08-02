@@ -1,4 +1,5 @@
 import { inflateSync } from 'node:zlib';
+import { detectAiSignals } from './ai-signals.js';
 
 export const ONLINE_METADATA_VIEWER_URL = 'https://metadataremover.ai/metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=metadata_viewer';
 
@@ -108,16 +109,6 @@ const TYPE_SIZES = new Map([
 ]);
 
 const POINTER_TAGS = new Set([0x8769, 0x8825, 0xa005]);
-const AI_PATTERNS = [
-  ['Stable Diffusion', /stable[\s_-]*diffusion/i],
-  ['ComfyUI', /\bcomfyui\b/i],
-  ['Automatic1111', /automatic\s*1111|a1111/i],
-  ['InvokeAI', /\binvokeai\b/i],
-  ['Prompt', /\bnegative prompt\b|\bprompt\b/i],
-  ['Workflow', /\bworkflow\b/i],
-  ['Generation parameters', /\bparameters\b|\bsampler\b|\bmodel hash\b/i],
-];
-
 export class UnsupportedImageError extends Error {
   constructor() {
     super('Unsupported image. Expected a JPEG, PNG, or WebP file.');
@@ -146,12 +137,6 @@ function boundedText(buffer, encoding = 'utf8') {
     text: buffer.subarray(0, MAX_FIELD_BYTES).toString(encoding).replace(/\0+$/g, ''),
     truncated,
   };
-}
-
-function detectAiSignals(text) {
-  return AI_PATTERNS
-    .filter(([, pattern]) => pattern.test(text ?? ''))
-    .map(([label]) => label);
 }
 
 function createReport(format, size) {

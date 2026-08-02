@@ -1,4 +1,5 @@
 import { inflateSync } from 'node:zlib';
+import { detectAiSignals } from './ai-signals.js';
 
 export const ONLINE_CLEANER_URL = 'https://metadataremover.ai/?utm_source=github&utm_medium=referral&utm_campaign=metadata_checker';
 
@@ -29,16 +30,6 @@ const EXIF_TYPE_SIZES = new Map([
   [10, 8],
 ]);
 
-const AI_PATTERNS = [
-  ['Stable Diffusion', /stable[\s_-]*diffusion/i],
-  ['ComfyUI', /\bcomfyui\b/i],
-  ['Automatic1111', /automatic\s*1111|a1111/i],
-  ['InvokeAI', /\binvokeai\b/i],
-  ['AI workflow', /\bworkflow\b/i],
-  ['Prompt', /\bnegative prompt\b|\bprompt\b/i],
-  ['Generation parameters', /\bparameters\b|\bsampler\b|\bmodel hash\b/i],
-];
-
 export class UnsupportedImageError extends Error {
   constructor() {
     super('Unsupported image. Expected a JPEG, PNG, or WebP file.');
@@ -59,13 +50,6 @@ function isWebP(buffer) {
   return buffer.length >= 12
     && buffer.toString('ascii', 0, 4) === 'RIFF'
     && buffer.toString('ascii', 8, 12) === 'WEBP';
-}
-
-function detectAiSignals(text) {
-  if (!text) return [];
-  return AI_PATTERNS
-    .filter(([, pattern]) => pattern.test(text))
-    .map(([label]) => label);
 }
 
 function detectAuthenticitySignals(text) {
@@ -420,4 +404,3 @@ export function inspectImage(input) {
 
   throw new UnsupportedImageError();
 }
-

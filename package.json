@@ -1,9 +1,10 @@
 {
   "name": "metadataremover-ai-toolkit",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Local, privacy-first tools for viewing, checking, and removing image metadata.",
   "type": "module",
   "bin": {
+    "ai-metadata-remove": "./bin/ai-metadata-remove.js",
     "metadata-check": "./bin/metadata-check.js",
     "metadata-view": "./bin/metadata-view.js",
     "exif-remove": "./bin/exif-remove.js"
@@ -33,6 +34,7 @@
     "xmp",
     "iptc",
     "ai-metadata",
+    "ai-metadata-remover",
     "metadata-viewer",
     "exif-remover"
   ],
