@@ -1,13 +1,16 @@
 {
   "name": "metadataremover-ai-toolkit",
-  "version": "0.3.0",
-  "description": "Local, privacy-first tools for viewing, checking, and removing image metadata.",
+  "version": "0.4.0",
+  "description": "Local, privacy-first tools for viewing, editing, checking, and removing image and PDF metadata.",
   "type": "module",
   "bin": {
     "ai-metadata-remove": "./bin/ai-metadata-remove.js",
     "metadata-check": "./bin/metadata-check.js",
     "metadata-view": "./bin/metadata-view.js",
-    "exif-remove": "./bin/exif-remove.js"
+    "exif-remove": "./bin/exif-remove.js",
+    "pdf-metadata-view": "./bin/pdf-metadata-view.js",
+    "pdf-metadata-edit": "./bin/pdf-metadata-edit.js",
+    "pdf-metadata-remove": "./bin/pdf-metadata-remove.js"
   },
   "scripts": {
     "check": "for file in bin/*.js src/*.js; do node --check \"$file\" || exit 1; done",
@@ -36,7 +39,11 @@
     "ai-metadata",
     "ai-metadata-remover",
     "metadata-viewer",
-    "exif-remover"
+    "exif-remover",
+    "pdf-metadata",
+    "pdf-metadata-viewer",
+    "pdf-metadata-editor",
+    "pdf-metadata-remover"
   ],
   "homepage": "https://metadataremover.ai/",
   "repository": {
@@ -46,5 +53,8 @@
   "bugs": {
     "url": "https://github.com/songwenlei/metadataremover.ai/issues"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "pdf-lib": "^1.17.1"
+  }
 }

@@ -1,8 +1,11 @@
 # MetadataRemover.ai Toolkit
 
-Local, privacy-first tools for inspecting and removing hidden image metadata. Every command works on your device, with no file uploads, telemetry, or account.
+Local, privacy-first tools for inspecting, editing, and removing hidden image and PDF metadata. Every command works on your device, with no file uploads, telemetry, or account.
 
-Prefer a browser? Use the [online Metadata Viewer](https://metadataremover.ai/metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=metadata_viewer), [AI Metadata Remover](https://metadataremover.ai/ai-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=ai_metadata_remover), focused [EXIF Remover](https://metadataremover.ai/exif-remover?utm_source=github&utm_medium=referral&utm_campaign=exif_remover), or the [full metadata cleaner](https://metadataremover.ai/?utm_source=github&utm_medium=referral&utm_campaign=metadata_checker). Image processing stays local in your browser.
+Prefer a browser? The online tools add visual review and more field-level choices while still processing locally:
+
+- Images: [Metadata Viewer](https://metadataremover.ai/metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=metadata_viewer), [Metadata Editor](https://metadataremover.ai/metadata-editor?utm_source=github&utm_medium=referral&utm_campaign=metadata_editor), [AI Metadata Remover](https://metadataremover.ai/ai-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=ai_metadata_remover), [EXIF Remover](https://metadataremover.ai/exif-remover?utm_source=github&utm_medium=referral&utm_campaign=exif_remover), and the [full metadata cleaner](https://metadataremover.ai/?utm_source=github&utm_medium=referral&utm_campaign=metadata_checker).
+- PDFs: [PDF Metadata Viewer](https://metadataremover.ai/pdf-metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=pdf_metadata_viewer), [PDF Metadata Editor](https://metadataremover.ai/pdf-metadata-editor?utm_source=github&utm_medium=referral&utm_campaign=pdf_metadata_editor), and [PDF Metadata Remover](https://metadataremover.ai/pdf-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=pdf_metadata_remover).
 
 ## Included tools
 
@@ -12,6 +15,9 @@ Prefer a browser? Use the [online Metadata Viewer](https://metadataremover.ai/me
 | `metadata-view` | Review supported EXIF/GPS values, text metadata, containers, and provenance markers; export JSON or CSV | No |
 | `ai-metadata-remove` | Remove recognized prompts, parameters, and workflow containers while keeping unrelated metadata | Writes a new copy |
 | `exif-remove` | Remove complete EXIF containers from a verified JPEG, PNG, or WebP copy | Writes a new copy |
+| `pdf-metadata-view` | Audit PDF Info, readable document XMP, and signature boundaries | No |
+| `pdf-metadata-edit` | Set or clear selected PDF Info fields while preserving document XMP | Writes a new copy |
+| `pdf-metadata-remove` | Remove the complete PDF Info dictionary and document-level XMP | Writes a new copy |
 
 ## Quick start
 
@@ -27,6 +33,9 @@ metadata-check photo.jpg
 metadata-view photo.jpg
 ai-metadata-remove generated.png
 exif-remove photo.jpg
+pdf-metadata-view report.pdf
+pdf-metadata-edit --title "Public report" --clear author report.pdf
+pdf-metadata-remove report.pdf
 ```
 
 You can also run every command directly from the cloned repository:
@@ -36,6 +45,9 @@ node ./bin/metadata-check.js photo.jpg
 node ./bin/metadata-view.js photo.jpg
 node ./bin/ai-metadata-remove.js generated.png
 node ./bin/exif-remove.js photo.jpg
+node ./bin/pdf-metadata-view.js report.pdf
+node ./bin/pdf-metadata-edit.js --title "Public report" report.pdf
+node ./bin/pdf-metadata-remove.js report.pdf
 ```
 
 ## Image Metadata Privacy Checker
@@ -132,6 +144,41 @@ If EXIF Orientation is not `1`, the command refuses removal by default: dropping
 
 See [EXIF Remover technical limits](docs/exif-remove.md).
 
+## PDF Metadata Viewer
+
+`pdf-metadata-view` reads standard and custom PDF Info values, a bounded document-level XMP packet, SHA-256 fingerprints, page count, and structural signature markers. It does not modify the PDF.
+
+```bash
+pdf-metadata-view document.pdf
+pdf-metadata-view --json document.pdf
+```
+
+Signature fields and `ByteRange` boundaries are detection-only evidence. The command does not validate signer identity, certificate trust, revocation, timestamps, or PAdES compliance. For a visual report and local JSON download, use the [online PDF Metadata Viewer](https://metadataremover.ai/pdf-metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=pdf_metadata_viewer).
+
+## PDF Metadata Editor
+
+`pdf-metadata-edit` sets or clears selected PDF Info fields in a separate file, reopens that copy, and verifies every requested value plus page count.
+
+```bash
+pdf-metadata-edit --title "Public report" --clear author document.pdf
+pdf-metadata-edit --creation-date 2026-08-07T08:30:00Z document.pdf
+```
+
+This focused CLI edits `Title`, `Author`, `Subject`, `Keywords`, `Creator`, `Producer`, `CreationDate`, and `ModDate`. It preserves document XMP, so a separate XMP value can remain. The [online PDF Metadata Editor](https://metadataremover.ai/pdf-metadata-editor?utm_source=github&utm_medium=referral&utm_campaign=pdf_metadata_editor) adds readable XMP editing and a visual before/after diff.
+
+## PDF Metadata Remover
+
+`pdf-metadata-remove` deletes the complete PDF Info dictionary and document-level XMP, performs a full local rewrite, reopens the output, and verifies metadata absence and page count.
+
+```bash
+pdf-metadata-remove document.pdf
+pdf-metadata-remove --output share.pdf document.pdf
+```
+
+The command refuses signed or encrypted PDFs. It does not sanitize visible text, annotations, attachments, embedded files, JavaScript, hidden layers, or metadata inside embedded images. Use the [online PDF Metadata Remover](https://metadataremover.ai/pdf-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=pdf_metadata_remover) for field-level selection and explicit signed-copy guidance.
+
+See [PDF metadata tools technical limits](docs/pdf-metadata-tools.md).
+
 ## Privacy and shared limits
 
 - All inspection and cleanup happens on your device.
@@ -139,7 +186,9 @@ See [EXIF Remover technical limits](docs/exif-remove.md).
 - Detection is conservative and cannot prove that an image contains no hidden data.
 - C2PA/JUMBF detection does not validate cryptographic signatures, trust chains, or claims.
 - These tools do not detect or remove pixel-level watermarks such as Google SynthID.
-- HEIC, HEIF, AVIF, video, PDF, and Office documents are not supported.
+- Image commands do not support HEIC, HEIF, AVIF, video, PDF, or Office documents. PDF commands accept PDF only.
+- PDF write commands refuse signed and encrypted files; signature detection is not cryptographic validation.
+- PDF page content, annotations, attachments, embedded files, JavaScript, hidden layers, and embedded-image metadata are outside the focused PDF commands.
 - `ai-metadata-remove` targets recognized PNG text and XMP containers only; it does not remove separate EXIF, C2PA, ICC, comments, or platform-side AI labels.
 - `exif-remove` removes EXIF only; use the [full browser cleaner](https://metadataremover.ai/?utm_source=github&utm_medium=referral&utm_campaign=metadata_checker) when you also need to remove supported XMP, IPTC, AI text, comments, or provenance containers.
 - Machine-readable JSON and CSV output never contains promotional links.

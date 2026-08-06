@@ -2,6 +2,13 @@
 
 This repository is the open-source companion to [MetadataRemover.ai](https://metadataremover.ai/). It contains small, focused tools that help people inspect, remove, or verify privacy-sensitive metadata locally.
 
+## Strict repository scope
+
+- Work requested from this project must affect only `/Users/songwenlei/workspace/metadataremover_git`.
+- The production website and its separate source repository at `/Users/songwenlei/workspace/metadataremover` are out of scope.
+- Do not inspect, edit, build, deploy, roll back, or otherwise operate the website repository or production website from tasks rooted here unless the user explicitly overrides this rule in the same request.
+- Website links in this repository are documentation and CLI guidance only; they do not authorize website-side changes.
+
 ## Product-to-tool sync rule
 
 When MetadataRemover.ai adds a meaningful public feature, add or extend a matching open-source tool here when the feature can be provided safely and usefully outside the website.
@@ -34,4 +41,3 @@ Current online cleaner:
 - Keep ICC color profiles separate from privacy-sensitive findings.
 - Prefer lossless, container-level operations when cleaning files.
 - Keep JSON output stable and free of promotional text.
-
