@@ -5,8 +5,11 @@ This repository is the open-source companion to [MetadataRemover.ai](https://met
 ## Strict repository scope
 
 - Work requested from this project must affect only `/Users/songwenlei/workspace/metadataremover_git`.
-- The production website and its separate source repository at `/Users/songwenlei/workspace/metadataremover` are out of scope.
-- Do not inspect, edit, build, deploy, roll back, or otherwise operate the website repository or production website from tasks rooted here unless the user explicitly overrides this rule in the same request.
+- The only GitHub repository that may be changed, committed, or pushed from this project is `songwenlei/metadataremover.ai`.
+- The production website source repository at `/Users/songwenlei/workspace/metadataremover` and GitHub repository `songwenlei/metadataremover` are permanently out of scope for tasks rooted here.
+- Treat the website repository as read-only reference at most. Never edit, format, install dependencies, build, stage, commit, push, deploy, roll back, or otherwise mutate it from this project.
+- A request made in this project to inspect or synchronize website features authorizes changes only in the open-source companion repository. It does not override the website-repository boundary.
+- Website-repository work requires a separate task rooted explicitly in `/Users/songwenlei/workspace/metadataremover`; do not infer that authorization here.
 - Website links in this repository are documentation and CLI guidance only; they do not authorize website-side changes.
 
 ## Product-to-tool sync rule

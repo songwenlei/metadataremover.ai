@@ -1,7 +1,7 @@
 {
   "name": "metadataremover-ai-toolkit",
-  "version": "0.4.0",
-  "description": "Local, privacy-first tools for viewing, editing, checking, and removing image and PDF metadata.",
+  "version": "0.5.0",
+  "description": "Local, privacy-first tools for viewing, editing, checking, and removing image, PDF, DOCX, and video metadata.",
   "type": "module",
   "bin": {
     "ai-metadata-remove": "./bin/ai-metadata-remove.js",
@@ -10,7 +10,11 @@
     "exif-remove": "./bin/exif-remove.js",
     "pdf-metadata-view": "./bin/pdf-metadata-view.js",
     "pdf-metadata-edit": "./bin/pdf-metadata-edit.js",
-    "pdf-metadata-remove": "./bin/pdf-metadata-remove.js"
+    "pdf-metadata-remove": "./bin/pdf-metadata-remove.js",
+    "docx-metadata-view": "./bin/docx-metadata-view.js",
+    "docx-metadata-remove": "./bin/docx-metadata-remove.js",
+    "video-metadata-view": "./bin/video-metadata-view.js",
+    "video-metadata-remove": "./bin/video-metadata-remove.js"
   },
   "scripts": {
     "check": "for file in bin/*.js src/*.js; do node --check \"$file\" || exit 1; done",
@@ -43,7 +47,13 @@
     "pdf-metadata",
     "pdf-metadata-viewer",
     "pdf-metadata-editor",
-    "pdf-metadata-remover"
+    "pdf-metadata-remover",
+    "docx-metadata",
+    "docx-metadata-viewer",
+    "docx-metadata-remover",
+    "video-metadata",
+    "video-metadata-viewer",
+    "video-metadata-remover"
   ],
   "homepage": "https://metadataremover.ai/",
   "repository": {
@@ -55,6 +65,8 @@
   },
   "license": "MIT",
   "dependencies": {
+    "@xmldom/xmldom": "^0.9.10",
+    "fflate": "^0.8.3",
     "pdf-lib": "^1.17.1"
   }
 }

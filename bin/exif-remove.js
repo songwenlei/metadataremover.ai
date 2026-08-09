@@ -10,7 +10,7 @@ import {
 } from '../src/exif-remover.js';
 import { UnsupportedImageError } from '../src/metadata-viewer.js';
 
-const VERSION = '0.3.0';
+const VERSION = '0.5.0';
 
 const HELP = `EXIF Remover
 

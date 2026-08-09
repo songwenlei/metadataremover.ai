@@ -1,11 +1,13 @@
 # MetadataRemover.ai Toolkit
 
-Local, privacy-first tools for inspecting, editing, and removing hidden image and PDF metadata. Every command works on your device, with no file uploads, telemetry, or account.
+Local, privacy-first tools for inspecting, editing, and removing hidden image, PDF, DOCX, and video metadata. Every command works on your device, with no file uploads, telemetry, or account.
 
 Prefer a browser? The online tools add visual review and more field-level choices while still processing locally:
 
 - Images: [Metadata Viewer](https://metadataremover.ai/metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=metadata_viewer), [Metadata Editor](https://metadataremover.ai/metadata-editor?utm_source=github&utm_medium=referral&utm_campaign=metadata_editor), [AI Metadata Remover](https://metadataremover.ai/ai-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=ai_metadata_remover), [EXIF Remover](https://metadataremover.ai/exif-remover?utm_source=github&utm_medium=referral&utm_campaign=exif_remover), and the [full metadata cleaner](https://metadataremover.ai/?utm_source=github&utm_medium=referral&utm_campaign=metadata_checker).
 - PDFs: [PDF Metadata Viewer](https://metadataremover.ai/pdf-metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=pdf_metadata_viewer), [PDF Metadata Editor](https://metadataremover.ai/pdf-metadata-editor?utm_source=github&utm_medium=referral&utm_campaign=pdf_metadata_editor), and [PDF Metadata Remover](https://metadataremover.ai/pdf-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=pdf_metadata_remover).
+- Word documents: [DOCX Metadata Viewer](https://metadataremover.ai/docx-metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=docx_metadata_viewer) and [DOCX Metadata Remover](https://metadataremover.ai/docx-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=docx_metadata_remover).
+- Video: [Video Metadata Viewer](https://metadataremover.ai/video-metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=video_metadata_viewer), [Video Metadata Remover](https://metadataremover.ai/video-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=video_metadata_remover), and the fuller [Video Metadata Editor](https://metadataremover.ai/video-metadata-editor?utm_source=github&utm_medium=referral&utm_campaign=video_metadata_editor).
 
 ## Included tools
 
@@ -18,6 +20,10 @@ Prefer a browser? The online tools add visual review and more field-level choice
 | `pdf-metadata-view` | Audit PDF Info, readable document XMP, and signature boundaries | No |
 | `pdf-metadata-edit` | Set or clear selected PDF Info fields while preserving document XMP | Writes a new copy |
 | `pdf-metadata-remove` | Remove the complete PDF Info dictionary and document-level XMP | Writes a new copy |
+| `docx-metadata-view` | Audit Word properties, comment/revision identities, and package boundaries | No |
+| `docx-metadata-remove` | Remove supported properties and thumbnails; anonymize supported author attributes | Writes a new copy |
+| `video-metadata-view` | Read focused MP4/MOV user data, timestamps, XMP, and WebM Info/Tags | No |
+| `video-metadata-remove` | Apply same-length MP4/MOV `free` or WebM `Void` patches without transcoding media | Writes a new copy |
 
 ## Quick start
 
@@ -36,6 +42,10 @@ exif-remove photo.jpg
 pdf-metadata-view report.pdf
 pdf-metadata-edit --title "Public report" --clear author report.pdf
 pdf-metadata-remove report.pdf
+docx-metadata-view proposal.docx
+docx-metadata-remove proposal.docx
+video-metadata-view clip.mp4
+video-metadata-remove clip.mp4
 ```
 
 You can also run every command directly from the cloned repository:
@@ -48,6 +58,10 @@ node ./bin/exif-remove.js photo.jpg
 node ./bin/pdf-metadata-view.js report.pdf
 node ./bin/pdf-metadata-edit.js --title "Public report" report.pdf
 node ./bin/pdf-metadata-remove.js report.pdf
+node ./bin/docx-metadata-view.js proposal.docx
+node ./bin/docx-metadata-remove.js proposal.docx
+node ./bin/video-metadata-view.js clip.mp4
+node ./bin/video-metadata-remove.js clip.mp4
 ```
 
 ## Image Metadata Privacy Checker
@@ -179,6 +193,46 @@ The command refuses signed or encrypted PDFs. It does not sanitize visible text,
 
 See [PDF metadata tools technical limits](docs/pdf-metadata-tools.md).
 
+## DOCX Metadata Tools
+
+`docx-metadata-view` reports Core, Extended and Custom Properties, comment and tracked-change identities, timestamps, document thumbnails, and important package boundaries without changing the Word document.
+
+```bash
+docx-metadata-view contract.docx
+docx-metadata-view --json contract.docx
+```
+
+`docx-metadata-remove` clears supported property records, removes the package thumbnail, pseudonymizes supported comment/revision authors, removes their timestamps, reopens the output, and verifies that visible, deleted, field-code, and comment text stayed unchanged.
+
+```bash
+docx-metadata-remove contract.docx
+docx-metadata-remove --output public.docx contract.docx
+```
+
+Signed, macro/ActiveX, encrypted, ZIP64, and non-DOCX packages remain read-only. Hidden text, external relationships, embedded objects, Custom XML contents, printer settings, and visible content are reported or documented but not silently removed. For field-level review and selection, use the [online DOCX Metadata Viewer](https://metadataremover.ai/docx-metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=docx_metadata_viewer) or [DOCX Metadata Remover](https://metadataremover.ai/docx-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=docx_metadata_remover).
+
+See [DOCX metadata tools technical limits](docs/docx-metadata-tools.md).
+
+## Video Metadata Tools
+
+`video-metadata-view` reads a focused, automation-friendly subset of MP4/MOV user-data atoms, creation/modification times, Adobe XMP UUID data, WebM Info values, SimpleTags, and attachment presence.
+
+```bash
+video-metadata-view recording.mov
+video-metadata-view --json delivery.webm
+```
+
+`video-metadata-remove` replaces supported MP4/MOV metadata boxes with same-length `free` boxes, clears supported container timestamps, and replaces WebM Tags, Attachments, and supported Info values with same-length `Void` elements. It then reopens the output and verifies container type, byte length, readable fields, and the hash of standard `mdat` or Cluster media payloads.
+
+```bash
+video-metadata-remove recording.mov
+video-metadata-remove --output share.webm delivery.webm
+```
+
+The CLI does not transcode media and does not remove visible frames, spoken audio, burned-in text, codec identifiers, unknown vendor-private atoms, chapters, or filesystem metadata. The [online Video Metadata Viewer](https://metadataremover.ai/video-metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=video_metadata_viewer) provides a fuller normalized report, the [Video Metadata Remover](https://metadataremover.ai/video-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=video_metadata_remover) adds a visual before/after workflow, and the [Video Metadata Editor](https://metadataremover.ai/video-metadata-editor?utm_source=github&utm_medium=referral&utm_campaign=video_metadata_editor) handles reviewed field editing.
+
+See [Video metadata tools technical limits](docs/video-metadata-tools.md).
+
 ## Privacy and shared limits
 
 - All inspection and cleanup happens on your device.
@@ -186,9 +240,11 @@ See [PDF metadata tools technical limits](docs/pdf-metadata-tools.md).
 - Detection is conservative and cannot prove that an image contains no hidden data.
 - C2PA/JUMBF detection does not validate cryptographic signatures, trust chains, or claims.
 - These tools do not detect or remove pixel-level watermarks such as Google SynthID.
-- Image commands do not support HEIC, HEIF, AVIF, video, PDF, or Office documents. PDF commands accept PDF only.
+- Image commands do not support HEIC, HEIF, AVIF, video, PDF, or Office documents; each PDF, DOCX, and video command accepts only its named container family.
 - PDF write commands refuse signed and encrypted files; signature detection is not cryptographic validation.
 - PDF page content, annotations, attachments, embedded files, JavaScript, hidden layers, and embedded-image metadata are outside the focused PDF commands.
+- DOCX cleanup refuses signed, macro-enabled, encrypted, ZIP64, and non-DOCX packages. It preserves hidden/visible content, external relationships, embedded objects, and Custom XML.
+- Video cleanup uses same-length container patches and verifies standard media payload hashes, but unknown atoms and non-container signals may remain.
 - `ai-metadata-remove` targets recognized PNG text and XMP containers only; it does not remove separate EXIF, C2PA, ICC, comments, or platform-side AI labels.
 - `exif-remove` removes EXIF only; use the [full browser cleaner](https://metadataremover.ai/?utm_source=github&utm_medium=referral&utm_campaign=metadata_checker) when you also need to remove supported XMP, IPTC, AI text, comments, or provenance containers.
 - Machine-readable JSON and CSV output never contains promotional links.

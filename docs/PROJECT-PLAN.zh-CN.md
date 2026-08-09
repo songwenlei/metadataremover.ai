@@ -64,6 +64,31 @@ Image Metadata Privacy Checker 对应网站首页的图片元数据能力，负�
 
 图片 Metadata Editor 暂不复制为不完整的命令。跨 JPEG、PNG、WebP 安全写入 EXIF/GPS/XMP，同时保留方向、未知字段、IPTC、色彩和来源容器，需要经过独立的容器写入与像素方向验证；在这些条件具备前，只保留在线编辑入口，避免发布会静默丢字段或改变显示方向的半成品。
 
+2026-08-08 上线的 DOCX 能力已同步为两个精简命令：
+
+- `docx-metadata-view`：读取 Core、Extended、Custom Properties，评论/修订身份与时间，并报告隐藏文本、外部关系、嵌入对象、Custom XML、签名和宏边界；
+- `docx-metadata-remove`：移除受支持属性与缩略图，匿名化受支持作者身份，删除评论/修订时间，然后复开包并核对正文、删除文本、域代码与评论文字不变；
+- 签名、宏/ActiveX、加密、ZIP64 与非标准 DOCX 只读；Custom XML、嵌入对象、外链和隐藏/可见内容不会被包装成“已经清理”。
+
+对应在线入口：
+
+- `https://metadataremover.ai/docx-metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=docx_metadata_viewer`
+- `https://metadataremover.ai/docx-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=docx_metadata_remover`
+
+2026-08-09 上线的视频能力已同步为查看与清理两个精简命令：
+
+- `video-metadata-view`：读取 MP4/MOV 常见 user-data、时间与 Adobe XMP UUID，以及 WebM Info、SimpleTags 和附件存在性；
+- `video-metadata-remove`：用同长度 MP4/MOV `free` box 或 WebM `Void` 替换受支持元数据，不转码、不移动媒体偏移，并复开验证容器、长度、字段和 `mdat`/Cluster 媒体载荷哈希；
+- 未知私有 atom、codec bitstream、画面、声音、烧录文字和文件系统时间明确保留在边界之外。
+
+对应在线入口：
+
+- `https://metadataremover.ai/video-metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=video_metadata_viewer`
+- `https://metadataremover.ai/video-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=video_metadata_remover`
+- `https://metadataremover.ai/video-metadata-editor?utm_source=github&utm_medium=referral&utm_campaign=video_metadata_editor`
+
+视频 Metadata Editor 暂不发布精简 CLI。可变长度字段重建会影响 fast-start MP4 的 chunk offsets，WebM 也需要完整 Tags 重建与播放验证；在这些写入和验证边界独立成熟前，编辑继续保留在线版。
+
 ## 后续路线图
 
 1. 本地通用 `clean`：在 EXIF-only 之外，无损移除更多支持的图片隐私元数据；
@@ -73,7 +98,7 @@ Image Metadata Privacy Checker 对应网站首页的图片元数据能力，负�
 5. GitHub Action：阻止含敏感元数据的文件进入仓库；
 6. Pre-commit Hook：提交前自动检查；
 7. C2PA/JUMBF 与 PDF 签名边界检测增强，但在实现密码学验证前不宣称签名有效性验证；
-8. 网站新增格式或能力后，同步增加对应命令或工具。
+8. 网站新增格式或能力后，同步增加对应命令或工具；编辑类写入必须先具备独立读回与容器/媒体验证。
 
 ## 网站链接规范
 
