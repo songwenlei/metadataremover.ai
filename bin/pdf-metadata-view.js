@@ -9,7 +9,7 @@ import {
   viewPdfMetadata,
 } from '../src/pdf-metadata.js';
 
-const VERSION = '0.5.0';
+const VERSION = '0.6.0';
 const HELP = `PDF Metadata Viewer
 
 Inspect PDF Info fields, document XMP, and signature boundaries locally.

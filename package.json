@@ -1,7 +1,7 @@
 {
   "name": "metadataremover-ai-toolkit",
-  "version": "0.5.0",
-  "description": "Local, privacy-first tools for viewing, editing, checking, and removing image, PDF, DOCX, and video metadata.",
+  "version": "0.6.0",
+  "description": "Local, privacy-first tools for viewing, editing, checking, and removing image, PDF, DOCX, video, and MP3 metadata.",
   "type": "module",
   "bin": {
     "ai-metadata-remove": "./bin/ai-metadata-remove.js",
@@ -14,7 +14,10 @@
     "docx-metadata-view": "./bin/docx-metadata-view.js",
     "docx-metadata-remove": "./bin/docx-metadata-remove.js",
     "video-metadata-view": "./bin/video-metadata-view.js",
-    "video-metadata-remove": "./bin/video-metadata-remove.js"
+    "video-metadata-remove": "./bin/video-metadata-remove.js",
+    "mp3-metadata-view": "./bin/mp3-metadata-view.js",
+    "mp3-metadata-edit": "./bin/mp3-metadata-edit.js",
+    "mp3-metadata-remove": "./bin/mp3-metadata-remove.js"
   },
   "scripts": {
     "check": "for file in bin/*.js src/*.js; do node --check \"$file\" || exit 1; done",
@@ -53,7 +56,12 @@
     "docx-metadata-remover",
     "video-metadata",
     "video-metadata-viewer",
-    "video-metadata-remover"
+    "video-metadata-remover",
+    "mp3-metadata",
+    "id3",
+    "id3v2",
+    "mp3-metadata-editor",
+    "mp3-metadata-remover"
   ],
   "homepage": "https://metadataremover.ai/",
   "repository": {

@@ -1,6 +1,6 @@
 # MetadataRemover.ai Toolkit
 
-Local, privacy-first tools for inspecting, editing, and removing hidden image, PDF, DOCX, and video metadata. Every command works on your device, with no file uploads, telemetry, or account.
+Local, privacy-first tools for inspecting, editing, and removing hidden image, PDF, DOCX, video, and MP3 metadata. Every command works on your device, with no file uploads, telemetry, or account.
 
 Prefer a browser? The online tools add visual review and more field-level choices while still processing locally:
 
@@ -8,6 +8,7 @@ Prefer a browser? The online tools add visual review and more field-level choice
 - PDFs: [PDF Metadata Viewer](https://metadataremover.ai/pdf-metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=pdf_metadata_viewer), [PDF Metadata Editor](https://metadataremover.ai/pdf-metadata-editor?utm_source=github&utm_medium=referral&utm_campaign=pdf_metadata_editor), and [PDF Metadata Remover](https://metadataremover.ai/pdf-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=pdf_metadata_remover).
 - Word documents: [DOCX Metadata Viewer](https://metadataremover.ai/docx-metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=docx_metadata_viewer) and [DOCX Metadata Remover](https://metadataremover.ai/docx-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=docx_metadata_remover).
 - Video: [Video Metadata Viewer](https://metadataremover.ai/video-metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=video_metadata_viewer), [Video Metadata Remover](https://metadataremover.ai/video-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=video_metadata_remover), and the fuller [Video Metadata Editor](https://metadataremover.ai/video-metadata-editor?utm_source=github&utm_medium=referral&utm_campaign=video_metadata_editor).
+- MP3 audio: [MP3 Metadata Editor](https://metadataremover.ai/mp3-metadata-editor?utm_source=github&utm_medium=referral&utm_campaign=mp3_metadata_editor) and [MP3 Metadata Remover](https://metadataremover.ai/mp3-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=mp3_metadata_remover).
 
 ## Included tools
 
@@ -24,6 +25,9 @@ Prefer a browser? The online tools add visual review and more field-level choice
 | `docx-metadata-remove` | Remove supported properties and thumbnails; anonymize supported author attributes | Writes a new copy |
 | `video-metadata-view` | Read focused MP4/MOV user data, timestamps, XMP, and WebM Info/Tags | No |
 | `video-metadata-remove` | Apply same-length MP4/MOV `free` or WebM `Void` patches without transcoding media | Writes a new copy |
+| `mp3-metadata-view` | Audit ID3v2.3/v2.4, ID3v1, readable APEv2, Lyrics3v2 presence, and cover art | No |
+| `mp3-metadata-edit` | Set or clear focused ID3 text fields and APIC cover art while preserving MPEG audio | Writes a new copy |
+| `mp3-metadata-remove` | Copy only the original MPEG audio range, dropping supported leading/trailing tags | Writes a new copy |
 
 ## Quick start
 
@@ -46,6 +50,9 @@ docx-metadata-view proposal.docx
 docx-metadata-remove proposal.docx
 video-metadata-view clip.mp4
 video-metadata-remove clip.mp4
+mp3-metadata-view episode.mp3
+mp3-metadata-edit --title "Public episode" --clear comment episode.mp3
+mp3-metadata-remove episode.mp3
 ```
 
 You can also run every command directly from the cloned repository:
@@ -62,6 +69,9 @@ node ./bin/docx-metadata-view.js proposal.docx
 node ./bin/docx-metadata-remove.js proposal.docx
 node ./bin/video-metadata-view.js clip.mp4
 node ./bin/video-metadata-remove.js clip.mp4
+node ./bin/mp3-metadata-view.js episode.mp3
+node ./bin/mp3-metadata-edit.js --title "Public episode" episode.mp3
+node ./bin/mp3-metadata-remove.js episode.mp3
 ```
 
 ## Image Metadata Privacy Checker
@@ -233,6 +243,33 @@ The CLI does not transcode media and does not remove visible frames, spoken audi
 
 See [Video metadata tools technical limits](docs/video-metadata-tools.md).
 
+## MP3 Metadata Tools
+
+`mp3-metadata-view` accepts actual MPEG Layer III bytes—not a `.mp3` extension alone—and reports focused ID3v2.3/v2.4 and ID3v1 values, APIC cover details, readable APEv2 text items, and Lyrics3v2 presence.
+
+```bash
+mp3-metadata-view episode.mp3
+mp3-metadata-view --json episode.mp3
+```
+
+`mp3-metadata-edit` sets or clears title, artist, album, album artist, date, genre, track, disc, comment, and APIC cover art. It rewrites one leading ID3v2 tag, updates ID3v1 only when it already exists, and preserves untouched ID3 frames, APEv2, Lyrics3v2, and the complete MPEG audio range byte-for-byte.
+
+```bash
+mp3-metadata-edit --title "Public episode" --clear comment episode.mp3
+mp3-metadata-edit --cover cover.png --output release.mp3 episode.mp3
+```
+
+`mp3-metadata-remove` drops complete supported leading/trailing tag regions and copies only the original MPEG audio byte range. It then reopens the result and verifies tag absence, audio length and SHA-256, MPEG version, sample rate, and first-frame signature.
+
+```bash
+mp3-metadata-remove episode.mp3
+mp3-metadata-remove --output share.mp3 episode.mp3
+```
+
+Neither write command decodes, normalizes, resamples, or recompresses audio. APEv2 and Lyrics3v2 are preserved by the focused editor and can disagree with edited ID3 values. For visual review and a fuller cover-art workflow, use the [online MP3 Metadata Editor](https://metadataremover.ai/mp3-metadata-editor?utm_source=github&utm_medium=referral&utm_campaign=mp3_metadata_editor); for a browser before/after flow, use the [MP3 Metadata Remover](https://metadataremover.ai/mp3-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=mp3_metadata_remover).
+
+See [MP3 metadata tools technical limits](docs/mp3-metadata-tools.md).
+
 ## Privacy and shared limits
 
 - All inspection and cleanup happens on your device.
@@ -240,11 +277,12 @@ See [Video metadata tools technical limits](docs/video-metadata-tools.md).
 - Detection is conservative and cannot prove that an image contains no hidden data.
 - C2PA/JUMBF detection does not validate cryptographic signatures, trust chains, or claims.
 - These tools do not detect or remove pixel-level watermarks such as Google SynthID.
-- Image commands do not support HEIC, HEIF, AVIF, video, PDF, or Office documents; each PDF, DOCX, and video command accepts only its named container family.
+- Image commands do not support HEIC, HEIF, AVIF, video, audio, PDF, or Office documents; each PDF, DOCX, video, and MP3 command accepts only its named container family.
 - PDF write commands refuse signed and encrypted files; signature detection is not cryptographic validation.
 - PDF page content, annotations, attachments, embedded files, JavaScript, hidden layers, and embedded-image metadata are outside the focused PDF commands.
 - DOCX cleanup refuses signed, macro-enabled, encrypted, ZIP64, and non-DOCX packages. It preserves hidden/visible content, external relationships, embedded objects, and Custom XML.
 - Video cleanup uses same-length container patches and verifies standard media payload hashes, but unknown atoms and non-container signals may remain.
+- MP3 cleanup verifies the complete MPEG byte-range hash but does not inspect or remove filenames, spoken names, audible watermarks, DRM, copyright protection, or service-side records.
 - `ai-metadata-remove` targets recognized PNG text and XMP containers only; it does not remove separate EXIF, C2PA, ICC, comments, or platform-side AI labels.
 - `exif-remove` removes EXIF only; use the [full browser cleaner](https://metadataremover.ai/?utm_source=github&utm_medium=referral&utm_campaign=metadata_checker) when you also need to remove supported XMP, IPTC, AI text, comments, or provenance containers.
 - Machine-readable JSON and CSV output never contains promotional links.

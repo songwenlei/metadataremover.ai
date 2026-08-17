@@ -89,6 +89,19 @@ Image Metadata Privacy Checker 对应网站首页的图片元数据能力，负�
 
 视频 Metadata Editor 暂不发布精简 CLI。可变长度字段重建会影响 fast-start MP4 的 chunk offsets，WebM 也需要完整 Tags 重建与播放验证；在这些写入和验证边界独立成熟前，编辑继续保留在线版。
 
+2026-08-12 上线的 MP3 编辑和移除能力已同步为三个独立可用的精简命令：
+
+- `mp3-metadata-view`：按连续 MPEG Layer III 帧头确认真实格式，读取 ID3v2.3/v2.4、ID3v1、APEv2 文本、Lyrics3v2 存在性和 APIC 封面摘要；
+- `mp3-metadata-edit`：修改或清除标题、艺术家、专辑、专辑艺术家、日期、流派、音轨、碟号、评论和 JPEG/PNG/WebP 封面；未修改 ID3 帧、MPEG 音频、APEv2 与 Lyrics3v2 逐字节保留；
+- `mp3-metadata-remove`：只复制原始 MPEG 音频区间，完整移除已支持的前后标签，不解码、不重采样、不重压缩；
+- 两个写命令都复开输出并核对完整音频哈希与长度、MPEG 版本、采样率、首帧签名以及各自的字段/标签条件；
+- 文件名、口播姓名、可听水印、音频指纹、DRM、版权保护和服务端记录明确留在边界之外。
+
+对应在线入口：
+
+- `https://metadataremover.ai/mp3-metadata-editor?utm_source=github&utm_medium=referral&utm_campaign=mp3_metadata_editor`
+- `https://metadataremover.ai/mp3-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=mp3_metadata_remover`
+
 ## 后续路线图
 
 1. 本地通用 `clean`：在 EXIF-only 之外，无损移除更多支持的图片隐私元数据；

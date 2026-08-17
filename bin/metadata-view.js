@@ -9,7 +9,7 @@ import {
   viewMetadata,
 } from '../src/metadata-viewer.js';
 
-const VERSION = '0.5.0';
+const VERSION = '0.6.0';
 
 const HELP = `Image Metadata Viewer
 
