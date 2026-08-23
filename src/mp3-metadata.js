@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 
+export const ONLINE_MP3_METADATA_VIEWER_URL = 'https://metadataremover.ai/mp3-metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=mp3_metadata_viewer';
 export const ONLINE_MP3_METADATA_EDITOR_URL = 'https://metadataremover.ai/mp3-metadata-editor?utm_source=github&utm_medium=referral&utm_campaign=mp3_metadata_editor';
 export const ONLINE_MP3_METADATA_REMOVER_URL = 'https://metadataremover.ai/mp3-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=mp3_metadata_remover';
 export const EDITABLE_MP3_FIELDS = [

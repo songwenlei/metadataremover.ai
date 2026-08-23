@@ -8,7 +8,7 @@ import {
   removeMp3Metadata,
 } from '../src/mp3-metadata.js';
 
-const VERSION = '0.6.0';
+const VERSION = '0.7.0';
 const HELP = `MP3 Metadata Remover
 
 Remove complete supported ID3v2, ID3v1, APEv2, and Lyrics3v2 tag regions.

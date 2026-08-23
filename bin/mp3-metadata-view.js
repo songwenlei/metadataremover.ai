@@ -4,11 +4,11 @@ import { readFile, stat } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import process from 'node:process';
 import {
-  ONLINE_MP3_METADATA_EDITOR_URL,
+  ONLINE_MP3_METADATA_VIEWER_URL,
   viewMp3Metadata,
 } from '../src/mp3-metadata.js';
 
-const VERSION = '0.6.0';
+const VERSION = '0.7.0';
 const HELP = `MP3 Metadata Viewer
 
 Inspect supported ID3v2.3, ID3v2.4, ID3v1, APEv2, and Lyrics3v2 tags locally.
@@ -22,8 +22,8 @@ Options:
   -h, --help        Show this help
   -v, --version     Show the version
 
-Online MP3 metadata editor:
-  ${ONLINE_MP3_METADATA_EDITOR_URL}
+Online MP3 metadata viewer:
+  ${ONLINE_MP3_METADATA_VIEWER_URL}
 `;
 
 function parseArguments(argv) {
@@ -92,7 +92,7 @@ async function main() {
       console.log('');
     }
     for (const error of errors) console.error(`[ERROR] ${printable(error.file)} — ${printable(error.error)}`);
-    console.log(`Need reviewed tag and cover-art editing? ${ONLINE_MP3_METADATA_EDITOR_URL}`);
+    console.log(`Explore the same MP3 in the browser: ${ONLINE_MP3_METADATA_VIEWER_URL}`);
   }
   if (errors.length) process.exitCode = 2;
 }

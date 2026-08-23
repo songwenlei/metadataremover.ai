@@ -9,7 +9,7 @@ import {
   editMp3Metadata,
 } from '../src/mp3-metadata.js';
 
-const VERSION = '0.6.0';
+const VERSION = '0.7.0';
 const FLAG_FIELDS = {
   '--title': 'title',
   '--artist': 'artist',

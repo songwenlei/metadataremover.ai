@@ -9,7 +9,7 @@ import {
   editPdfMetadata,
 } from '../src/pdf-metadata.js';
 
-const VERSION = '0.6.0';
+const VERSION = '0.7.0';
 const FLAG_FIELDS = {
   '--title': 'title',
   '--author': 'author',

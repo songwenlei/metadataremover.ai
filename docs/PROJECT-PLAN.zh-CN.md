@@ -64,15 +64,17 @@ Image Metadata Privacy Checker 对应网站首页的图片元数据能力，负�
 
 图片 Metadata Editor 暂不复制为不完整的命令。跨 JPEG、PNG、WebP 安全写入 EXIF/GPS/XMP，同时保留方向、未知字段、IPTC、色彩和来源容器，需要经过独立的容器写入与像素方向验证；在这些条件具备前，只保留在线编辑入口，避免发布会静默丢字段或改变显示方向的半成品。
 
-2026-08-08 上线的 DOCX 能力已同步为两个精简命令：
+2026-08-08 上线的 DOCX 查看/移除能力与 2026-08-22 上线的编辑能力已同步为三个精简命令：
 
 - `docx-metadata-view`：读取 Core、Extended、Custom Properties，评论/修订身份与时间，并报告隐藏文本、外部关系、嵌入对象、Custom XML、签名和宏边界；
+- `docx-metadata-edit`：新增、修改或清除选中的 Core Properties 与 Company/Manager，复开后核对请求值、未编辑属性、Word 文字和未触碰 OOXML 部件；精简版保留 Custom Properties、评论/修订身份与缩略图，不创建缺失的属性部件；
 - `docx-metadata-remove`：移除受支持属性与缩略图，匿名化受支持作者身份，删除评论/修订时间，然后复开包并核对正文、删除文本、域代码与评论文字不变；
 - 签名、宏/ActiveX、加密、ZIP64 与非标准 DOCX 只读；Custom XML、嵌入对象、外链和隐藏/可见内容不会被包装成“已经清理”。
 
 对应在线入口：
 
 - `https://metadataremover.ai/docx-metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=docx_metadata_viewer`
+- `https://metadataremover.ai/docx-metadata-editor?utm_source=github&utm_medium=referral&utm_campaign=docx_metadata_editor`
 - `https://metadataremover.ai/docx-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=docx_metadata_remover`
 
 2026-08-09 上线的视频能力已同步为查看与清理两个精简命令：
@@ -89,7 +91,7 @@ Image Metadata Privacy Checker 对应网站首页的图片元数据能力，负�
 
 视频 Metadata Editor 暂不发布精简 CLI。可变长度字段重建会影响 fast-start MP4 的 chunk offsets，WebM 也需要完整 Tags 重建与播放验证；在这些写入和验证边界独立成熟前，编辑继续保留在线版。
 
-2026-08-12 上线的 MP3 编辑和移除能力已同步为三个独立可用的精简命令：
+MP3 编辑和移除能力已在 2026-08-12 后同步为三个独立可用的精简命令；2026-08-22 上线的独立 Viewer 页面也已补齐对应入口：
 
 - `mp3-metadata-view`：按连续 MPEG Layer III 帧头确认真实格式，读取 ID3v2.3/v2.4、ID3v1、APEv2 文本、Lyrics3v2 存在性和 APIC 封面摘要；
 - `mp3-metadata-edit`：修改或清除标题、艺术家、专辑、专辑艺术家、日期、流派、音轨、碟号、评论和 JPEG/PNG/WebP 封面；未修改 ID3 帧、MPEG 音频、APEv2 与 Lyrics3v2 逐字节保留；
@@ -99,6 +101,7 @@ Image Metadata Privacy Checker 对应网站首页的图片元数据能力，负�
 
 对应在线入口：
 
+- `https://metadataremover.ai/mp3-metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=mp3_metadata_viewer`
 - `https://metadataremover.ai/mp3-metadata-editor?utm_source=github&utm_medium=referral&utm_campaign=mp3_metadata_editor`
 - `https://metadataremover.ai/mp3-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=mp3_metadata_remover`
 

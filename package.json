@@ -1,6 +1,6 @@
 {
   "name": "metadataremover-ai-toolkit",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Local, privacy-first tools for viewing, editing, checking, and removing image, PDF, DOCX, video, and MP3 metadata.",
   "type": "module",
   "bin": {
@@ -12,6 +12,7 @@
     "pdf-metadata-edit": "./bin/pdf-metadata-edit.js",
     "pdf-metadata-remove": "./bin/pdf-metadata-remove.js",
     "docx-metadata-view": "./bin/docx-metadata-view.js",
+    "docx-metadata-edit": "./bin/docx-metadata-edit.js",
     "docx-metadata-remove": "./bin/docx-metadata-remove.js",
     "video-metadata-view": "./bin/video-metadata-view.js",
     "video-metadata-remove": "./bin/video-metadata-remove.js",
@@ -53,6 +54,7 @@
     "pdf-metadata-remover",
     "docx-metadata",
     "docx-metadata-viewer",
+    "docx-metadata-editor",
     "docx-metadata-remover",
     "video-metadata",
     "video-metadata-viewer",

@@ -6,9 +6,9 @@ Prefer a browser? The online tools add visual review and more field-level choice
 
 - Images: [Metadata Viewer](https://metadataremover.ai/metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=metadata_viewer), [Metadata Editor](https://metadataremover.ai/metadata-editor?utm_source=github&utm_medium=referral&utm_campaign=metadata_editor), [AI Metadata Remover](https://metadataremover.ai/ai-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=ai_metadata_remover), [EXIF Remover](https://metadataremover.ai/exif-remover?utm_source=github&utm_medium=referral&utm_campaign=exif_remover), and the [full metadata cleaner](https://metadataremover.ai/?utm_source=github&utm_medium=referral&utm_campaign=metadata_checker).
 - PDFs: [PDF Metadata Viewer](https://metadataremover.ai/pdf-metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=pdf_metadata_viewer), [PDF Metadata Editor](https://metadataremover.ai/pdf-metadata-editor?utm_source=github&utm_medium=referral&utm_campaign=pdf_metadata_editor), and [PDF Metadata Remover](https://metadataremover.ai/pdf-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=pdf_metadata_remover).
-- Word documents: [DOCX Metadata Viewer](https://metadataremover.ai/docx-metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=docx_metadata_viewer) and [DOCX Metadata Remover](https://metadataremover.ai/docx-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=docx_metadata_remover).
+- Word documents: [DOCX Metadata Viewer](https://metadataremover.ai/docx-metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=docx_metadata_viewer), [DOCX Metadata Editor](https://metadataremover.ai/docx-metadata-editor?utm_source=github&utm_medium=referral&utm_campaign=docx_metadata_editor), and [DOCX Metadata Remover](https://metadataremover.ai/docx-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=docx_metadata_remover).
 - Video: [Video Metadata Viewer](https://metadataremover.ai/video-metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=video_metadata_viewer), [Video Metadata Remover](https://metadataremover.ai/video-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=video_metadata_remover), and the fuller [Video Metadata Editor](https://metadataremover.ai/video-metadata-editor?utm_source=github&utm_medium=referral&utm_campaign=video_metadata_editor).
-- MP3 audio: [MP3 Metadata Editor](https://metadataremover.ai/mp3-metadata-editor?utm_source=github&utm_medium=referral&utm_campaign=mp3_metadata_editor) and [MP3 Metadata Remover](https://metadataremover.ai/mp3-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=mp3_metadata_remover).
+- MP3 audio: [MP3 Metadata Viewer](https://metadataremover.ai/mp3-metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=mp3_metadata_viewer), [MP3 Metadata Editor](https://metadataremover.ai/mp3-metadata-editor?utm_source=github&utm_medium=referral&utm_campaign=mp3_metadata_editor), and [MP3 Metadata Remover](https://metadataremover.ai/mp3-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=mp3_metadata_remover).
 
 ## Included tools
 
@@ -22,6 +22,7 @@ Prefer a browser? The online tools add visual review and more field-level choice
 | `pdf-metadata-edit` | Set or clear selected PDF Info fields while preserving document XMP | Writes a new copy |
 | `pdf-metadata-remove` | Remove the complete PDF Info dictionary and document-level XMP | Writes a new copy |
 | `docx-metadata-view` | Audit Word properties, comment/revision identities, and package boundaries | No |
+| `docx-metadata-edit` | Set or clear selected Word Core Properties plus Company and Manager | Writes a new copy |
 | `docx-metadata-remove` | Remove supported properties and thumbnails; anonymize supported author attributes | Writes a new copy |
 | `video-metadata-view` | Read focused MP4/MOV user data, timestamps, XMP, and WebM Info/Tags | No |
 | `video-metadata-remove` | Apply same-length MP4/MOV `free` or WebM `Void` patches without transcoding media | Writes a new copy |
@@ -47,6 +48,7 @@ pdf-metadata-view report.pdf
 pdf-metadata-edit --title "Public report" --clear author report.pdf
 pdf-metadata-remove report.pdf
 docx-metadata-view proposal.docx
+docx-metadata-edit --title "Public proposal" --clear author proposal.docx
 docx-metadata-remove proposal.docx
 video-metadata-view clip.mp4
 video-metadata-remove clip.mp4
@@ -66,6 +68,7 @@ node ./bin/pdf-metadata-view.js report.pdf
 node ./bin/pdf-metadata-edit.js --title "Public report" report.pdf
 node ./bin/pdf-metadata-remove.js report.pdf
 node ./bin/docx-metadata-view.js proposal.docx
+node ./bin/docx-metadata-edit.js --title "Public proposal" proposal.docx
 node ./bin/docx-metadata-remove.js proposal.docx
 node ./bin/video-metadata-view.js clip.mp4
 node ./bin/video-metadata-remove.js clip.mp4
@@ -212,6 +215,15 @@ docx-metadata-view contract.docx
 docx-metadata-view --json contract.docx
 ```
 
+`docx-metadata-edit` sets, adds, or clears selected Core Properties plus `Company` and `Manager` in a separate copy. It independently reopens the output, verifies each requested value, checks all unedited supported properties, compares Word text, and confirms every untouched expanded OOXML part byte for byte.
+
+```bash
+docx-metadata-edit --title "Public proposal" --clear author contract.docx
+docx-metadata-edit --company "Example Studio" --modified 2026-08-23T09:30:00+08:00 contract.docx
+```
+
+The focused CLI preserves existing Custom Properties, application/statistics fields, comment and revision identities, and thumbnails. It edits fields only when the standard Core or Extended Property part already exists; the [online DOCX Metadata Editor](https://metadataremover.ai/docx-metadata-editor?utm_source=github&utm_medium=referral&utm_campaign=docx_metadata_editor) adds a visual diff, missing-part creation, and type-safe editing of supported existing Custom Properties.
+
 `docx-metadata-remove` clears supported property records, removes the package thumbnail, pseudonymizes supported comment/revision authors, removes their timestamps, reopens the output, and verifies that visible, deleted, field-code, and comment text stayed unchanged.
 
 ```bash
@@ -219,7 +231,7 @@ docx-metadata-remove contract.docx
 docx-metadata-remove --output public.docx contract.docx
 ```
 
-Signed, macro/ActiveX, encrypted, ZIP64, and non-DOCX packages remain read-only. Hidden text, external relationships, embedded objects, Custom XML contents, printer settings, and visible content are reported or documented but not silently removed. For field-level review and selection, use the [online DOCX Metadata Viewer](https://metadataremover.ai/docx-metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=docx_metadata_viewer) or [DOCX Metadata Remover](https://metadataremover.ai/docx-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=docx_metadata_remover).
+Signed, macro/ActiveX, encrypted, ZIP64, and non-DOCX packages remain read-only. Hidden text, external relationships, embedded objects, Custom XML contents, printer settings, and visible content are reported or documented but not silently removed. For a visual workflow, use the online [DOCX Metadata Viewer](https://metadataremover.ai/docx-metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=docx_metadata_viewer), [DOCX Metadata Editor](https://metadataremover.ai/docx-metadata-editor?utm_source=github&utm_medium=referral&utm_campaign=docx_metadata_editor), or [DOCX Metadata Remover](https://metadataremover.ai/docx-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=docx_metadata_remover).
 
 See [DOCX metadata tools technical limits](docs/docx-metadata-tools.md).
 
@@ -251,6 +263,8 @@ See [Video metadata tools technical limits](docs/video-metadata-tools.md).
 mp3-metadata-view episode.mp3
 mp3-metadata-view --json episode.mp3
 ```
+
+For searchable local inspection in the browser, use the [online MP3 Metadata Viewer](https://metadataremover.ai/mp3-metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=mp3_metadata_viewer).
 
 `mp3-metadata-edit` sets or clears title, artist, album, album artist, date, genre, track, disc, comment, and APIC cover art. It rewrites one leading ID3v2 tag, updates ID3v1 only when it already exists, and preserves untouched ID3 frames, APEv2, Lyrics3v2, and the complete MPEG audio range byte-for-byte.
 

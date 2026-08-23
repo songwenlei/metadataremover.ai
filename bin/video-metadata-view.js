@@ -8,7 +8,7 @@ import {
   viewVideoMetadata,
 } from '../src/video-metadata.js';
 
-const VERSION = '0.6.0';
+const VERSION = '0.7.0';
 const HELP = `Video Metadata Viewer
 
 Inspect supported MP4, MOV, and WebM container metadata locally without changing the file.

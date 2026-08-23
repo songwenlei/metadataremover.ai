@@ -9,7 +9,7 @@ import {
 } from '../src/ai-metadata-remover.js';
 import { UnsupportedImageError } from '../src/metadata-viewer.js';
 
-const VERSION = '0.6.0';
+const VERSION = '0.7.0';
 
 const HELP = `AI Metadata Remover
 

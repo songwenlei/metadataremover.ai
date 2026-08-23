@@ -3,6 +3,7 @@ import { DOMParser, XMLSerializer } from '@xmldom/xmldom';
 import { unzipSync, zipSync } from 'fflate';
 
 export const ONLINE_DOCX_METADATA_VIEWER_URL = 'https://metadataremover.ai/docx-metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=docx_metadata_viewer';
+export const ONLINE_DOCX_METADATA_EDITOR_URL = 'https://metadataremover.ai/docx-metadata-editor?utm_source=github&utm_medium=referral&utm_campaign=docx_metadata_editor';
 export const ONLINE_DOCX_METADATA_REMOVER_URL = 'https://metadataremover.ai/docx-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=docx_metadata_remover';
 
 const MAX_SOURCE_BYTES = 25 * 1024 * 1024;
@@ -12,6 +13,10 @@ const MAX_ENTRY_COUNT = 4096;
 const MAX_VALUE_LENGTH = 64 * 1024;
 const WORD_NAMESPACE = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
 const PACKAGE_REL_NAMESPACE = 'http://schemas.openxmlformats.org/package/2006/relationships';
+const CORE_NAMESPACE = 'http://schemas.openxmlformats.org/package/2006/metadata/core-properties';
+const DC_NAMESPACE = 'http://purl.org/dc/elements/1.1/';
+const DCTERMS_NAMESPACE = 'http://purl.org/dc/terms/';
+const XSI_NAMESPACE = 'http://www.w3.org/2001/XMLSchema-instance';
 const DOCX_MAIN_CONTENT_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml';
 const EOCD_SIGNATURE = 0x06054b50;
 const CENTRAL_ENTRY_SIGNATURE = 0x02014b50;
@@ -33,6 +38,28 @@ const CORE_FIELDS = new Map([
   ['language', ['Language', 'low']],
   ['version', ['Version', 'medium']],
 ]);
+
+export const EDITABLE_DOCX_FIELDS = [...CORE_FIELDS.keys(), 'company', 'manager'];
+
+const CORE_ELEMENT_NAMES = new Map([
+  ['title', [DC_NAMESPACE, 'dc:title']],
+  ['subject', [DC_NAMESPACE, 'dc:subject']],
+  ['creator', [DC_NAMESPACE, 'dc:creator']],
+  ['keywords', [CORE_NAMESPACE, 'cp:keywords']],
+  ['description', [DC_NAMESPACE, 'dc:description']],
+  ['lastModifiedBy', [CORE_NAMESPACE, 'cp:lastModifiedBy']],
+  ['revision', [CORE_NAMESPACE, 'cp:revision']],
+  ['created', [DCTERMS_NAMESPACE, 'dcterms:created']],
+  ['modified', [DCTERMS_NAMESPACE, 'dcterms:modified']],
+  ['lastPrinted', [CORE_NAMESPACE, 'cp:lastPrinted']],
+  ['category', [CORE_NAMESPACE, 'cp:category']],
+  ['contentStatus', [CORE_NAMESPACE, 'cp:contentStatus']],
+  ['identifier', [DC_NAMESPACE, 'dc:identifier']],
+  ['language', [DC_NAMESPACE, 'dc:language']],
+  ['version', [CORE_NAMESPACE, 'cp:version']],
+]);
+
+const DATE_FIELDS = new Set(['created', 'modified', 'lastPrinted']);
 
 const REVISION_ELEMENTS = new Set([
   'cellDel', 'cellIns', 'cellMerge', 'del', 'ins', 'moveFrom', 'moveFromRangeEnd',
@@ -447,6 +474,208 @@ function serialize(entries, name, document, touched) {
   touched.add(name);
 }
 
+function directChildren(document, name, namespace = null) {
+  if (!document?.documentElement) return [];
+  return Array.from(document.documentElement.childNodes).filter(
+    (node) => node.nodeType === 1
+      && localName(node) === name
+      && (namespace === null || node.namespaceURI === namespace),
+  );
+}
+
+function normalizeIsoDate(field, value) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,9})?(?:Z|[+-](\d{2}):(\d{2}))$/i.exec(value);
+  if (!match) {
+    throw new DocxMetadataError('invalid_value', `The ${field} value must be a complete ISO 8601 date with a timezone.`);
+  }
+  const [, rawYear, rawMonth, rawDay, rawHour, rawMinute, rawSecond, rawOffsetHour = '0', rawOffsetMinute = '0'] = match;
+  const year = Number(rawYear);
+  const month = Number(rawMonth);
+  const day = Number(rawDay);
+  const leapYear = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const daysInMonth = [31, leapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  if (
+    month < 1 || month > 12
+    || day < 1 || day > daysInMonth[month - 1]
+    || Number(rawHour) > 23
+    || Number(rawMinute) > 59
+    || Number(rawSecond) > 59
+    || Number(rawOffsetHour) > 23
+    || Number(rawOffsetMinute) > 59
+  ) {
+    throw new DocxMetadataError('invalid_value', `The ${field} value is not a valid ISO 8601 calendar date.`);
+  }
+  const timestamp = Date.parse(value);
+  if (!Number.isFinite(timestamp)) {
+    throw new DocxMetadataError('invalid_value', `The ${field} value is not a date this runtime can store.`);
+  }
+  return new Date(timestamp).toISOString();
+}
+
+function normalizeDocxChanges(changes) {
+  if (!changes || typeof changes !== 'object' || Array.isArray(changes)) {
+    throw new TypeError('DOCX metadata changes must be an object.');
+  }
+  const normalized = {};
+  for (const [field, rawValue] of Object.entries(changes)) {
+    if (!EDITABLE_DOCX_FIELDS.includes(field)) {
+      throw new DocxMetadataError('unsupported_field', `Unsupported DOCX metadata field: ${field}.`);
+    }
+    if (rawValue === null) {
+      normalized[field] = null;
+      continue;
+    }
+    if (typeof rawValue !== 'string') {
+      throw new DocxMetadataError('invalid_value', `The ${field} value must be a string or null.`);
+    }
+    if (!rawValue.length) {
+      throw new DocxMetadataError('invalid_value', `The ${field} value is empty; use null to clear it.`);
+    }
+    if (rawValue.length > MAX_VALUE_LENGTH) {
+      throw new DocxMetadataError('invalid_value', `The ${field} value exceeds 64 KiB.`);
+    }
+    if (/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(rawValue)) {
+      throw new DocxMetadataError('invalid_value', `The ${field} value contains characters that XML cannot store.`);
+    }
+    if (field === 'revision' && !/^\d+$/.test(rawValue)) {
+      throw new DocxMetadataError('invalid_value', 'The revision value must contain decimal digits only.');
+    }
+    if (DATE_FIELDS.has(field)) {
+      normalized[field] = normalizeIsoDate(field, rawValue);
+    } else {
+      normalized[field] = rawValue;
+    }
+  }
+  if (!Object.keys(normalized).length) {
+    throw new DocxMetadataError('no_changes', 'At least one DOCX metadata field change is required.');
+  }
+  return normalized;
+}
+
+function applyElementChange(document, name, namespace, value, createElement) {
+  const matches = directChildren(document, name, namespace);
+  if (value === null) {
+    for (const element of matches) element.parentNode?.removeChild(element);
+    return matches.length > 0;
+  }
+  const element = matches.shift() ?? createElement();
+  let changed = !element.parentNode || element.textContent !== value || matches.length > 0;
+  if (!element.parentNode) document.documentElement.appendChild(element);
+  element.textContent = value;
+  for (const duplicate of matches) duplicate.parentNode?.removeChild(duplicate);
+  return changed;
+}
+
+function applyCoreChanges(entries, changes, touched) {
+  const requested = Object.entries(changes).filter(([field]) => CORE_FIELDS.has(field));
+  if (!requested.length) return;
+  const name = 'docProps/core.xml';
+  const document = parseXml(entries, name);
+  if (!document?.documentElement) {
+    if (requested.some(([, value]) => value !== null)) {
+      throw new DocxMetadataError(
+        'unsupported_editor',
+        'This focused editor does not create a missing docProps/core.xml property part.',
+      );
+    }
+    return;
+  }
+  let changed = false;
+  for (const [field, value] of requested) {
+    const [namespace, qualifiedName] = CORE_ELEMENT_NAMES.get(field);
+    changed = applyElementChange(
+      document,
+      field,
+      namespace,
+      value,
+      () => document.createElementNS(namespace, qualifiedName),
+    ) || changed;
+    if (value !== null && (field === 'created' || field === 'modified')) {
+      const element = directChildren(document, field, namespace)[0];
+      if (element?.getAttributeNS(XSI_NAMESPACE, 'type') !== 'dcterms:W3CDTF') {
+        element?.setAttributeNS(XSI_NAMESPACE, 'xsi:type', 'dcterms:W3CDTF');
+        changed = true;
+      }
+    }
+  }
+  if (changed) serialize(entries, name, document, touched);
+}
+
+function applyExtendedChanges(entries, changes, touched) {
+  const requested = Object.entries(changes).filter(([field]) => field === 'company' || field === 'manager');
+  if (!requested.length) return;
+  const name = 'docProps/app.xml';
+  const document = parseXml(entries, name);
+  if (!document?.documentElement) {
+    if (requested.some(([, value]) => value !== null)) {
+      throw new DocxMetadataError(
+        'unsupported_editor',
+        'This focused editor does not create a missing docProps/app.xml property part.',
+      );
+    }
+    return;
+  }
+  let changed = false;
+  for (const [field, value] of requested) {
+    const elementName = field === 'company' ? 'Company' : 'Manager';
+    changed = applyElementChange(
+      document,
+      elementName,
+      document.documentElement.namespaceURI,
+      value,
+      () => document.createElementNS(document.documentElement.namespaceURI, elementName),
+    ) || changed;
+  }
+  if (changed) serialize(entries, name, document, touched);
+}
+
+function fieldId(field) {
+  if (field === 'company') return 'extended:Company';
+  if (field === 'manager') return 'extended:Manager';
+  return `core:${field}`;
+}
+
+function fieldValues(report, id) {
+  return report.fields.filter((field) => field.id === id).map((field) => field.value);
+}
+
+function sameValues(left, right) {
+  return left.length === right.length && left.every((value, index) => value === right[index]);
+}
+
+function editableFieldResults(before, after, changes) {
+  return Object.entries(changes).map(([field, expected]) => {
+    const id = fieldId(field);
+    const beforeValues = fieldValues(before, id);
+    const afterValues = fieldValues(after, id);
+    const expectedValue = expected === null ? null : compact(expected);
+    const passed = expectedValue === null
+      ? afterValues.length === 0
+      : afterValues.length === 1 && afterValues[0] === expectedValue;
+    return {
+      field,
+      before: beforeValues.length ? beforeValues : null,
+      after: afterValues.length ? afterValues : null,
+      operation: expected === null ? 'clear' : beforeValues.length ? 'set' : 'add',
+      passed,
+    };
+  });
+}
+
+function uneditedPropertyFieldsPreserved(before, after, changes) {
+  const editedIds = new Set(Object.keys(changes).map(fieldId));
+  const sources = new Set(['core', 'extended', 'custom']);
+  const ids = new Set([
+    ...before.fields.filter((field) => sources.has(field.source)).map((field) => field.id),
+    ...after.fields.filter((field) => sources.has(field.source)).map((field) => field.id),
+  ]);
+  for (const id of ids) {
+    if (editedIds.has(id)) continue;
+    if (!sameValues(fieldValues(before, id), fieldValues(after, id))) return false;
+  }
+  return true;
+}
+
 function clearPropertyParts(entries, touched) {
   for (const name of ['docProps/core.xml', 'docProps/app.xml', 'docProps/custom.xml']) {
     const document = parseXml(entries, name);
@@ -559,6 +788,66 @@ function writePackage(entries) {
     data[name] = value;
   }
   return Buffer.from(zipSync(data, { level: 6 }));
+}
+
+export function editDocxMetadata(input, changes) {
+  const normalizedChanges = normalizeDocxChanges(changes);
+  const opened = openPackage(input);
+  const before = inspectOpened(opened);
+  if (!before.rewriteAllowed) throw new DocxMetadataError('rewrite_blocked', before.blockingReasons.join(' '));
+
+  const entries = new Map([...opened.entries].map(([name, value]) => [name, Buffer.from(value)]));
+  const touched = new Set();
+  applyCoreChanges(entries, normalizedChanges, touched);
+  applyExtendedChanges(entries, normalizedChanges, touched);
+  const buffer = writePackage(entries);
+  const reopened = openPackage(buffer);
+  const after = inspectOpened(reopened);
+
+  const changedFields = editableFieldResults(before, after, normalizedChanges);
+  const requestedValuesVerified = changedFields.every((field) => field.passed);
+  const uneditedFieldsPreserved = uneditedPropertyFieldsPreserved(before, after, normalizedChanges);
+  const visibleTextPreserved = visibleWordText(opened.entries) === visibleWordText(reopened.entries);
+  let untouchedPartsPreserved = true;
+  let preservedEntryCount = 0;
+  for (const [name, value] of opened.entries) {
+    if (touched.has(name)) continue;
+    if (!byteEqual(value, reopened.entries.get(name))) {
+      untouchedPartsPreserved = false;
+      break;
+    }
+    preservedEntryCount += 1;
+  }
+  const checks = [
+    { id: 'reopened', passed: after.format === 'DOCX', detail: 'The output reopened as a standard DOCX package.' },
+    { id: 'requested-values', passed: requestedValuesVerified, detail: `${changedFields.length} requested field value(s) passed independent readback.` },
+    { id: 'unedited-properties', passed: uneditedFieldsPreserved, detail: 'Unedited supported Core, Extended, and Custom Properties stayed semantically unchanged.' },
+    { id: 'visible-text', passed: visibleTextPreserved, detail: 'Visible, deleted, field-code, and comment text stayed unchanged.' },
+    { id: 'untouched-parts', passed: untouchedPartsPreserved, detail: `${preservedEntryCount} untouched package part(s) stayed byte-for-byte identical after decompression.` },
+  ];
+  if (!checks.every((check) => check.passed)) {
+    throw new DocxMetadataError('verification_failed', 'The edited DOCX did not pass independent readback verification.');
+  }
+  return {
+    buffer,
+    report: {
+      format: 'DOCX',
+      sourceSize: opened.bytes.length,
+      outputSize: buffer.length,
+      changedFields: changedFields.map(({ passed, ...field }) => field),
+      touchedEntries: [...touched].sort(),
+      preservedEntryCount,
+      verified: true,
+      checks,
+      warnings: before.warnings,
+      limitations: [
+        'This focused editor changes supported Core Properties plus Company and Manager only.',
+        'Existing Custom Properties, application/statistics fields, comment identities, revision identities, and package thumbnails are preserved.',
+        'Missing Core or Extended Property parts are not created; use the online editor for that broader workflow.',
+        ...after.limitations,
+      ],
+    },
+  };
 }
 
 export function removeDocxMetadata(input) {

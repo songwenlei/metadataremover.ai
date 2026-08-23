@@ -1,10 +1,10 @@
 # MP3 metadata tools: behavior and technical limits
 
-The MP3 commands are focused local companions to the browser editor and remover. They accept files by consecutive MPEG Layer III frame headers—not by extension—never overwrite the source, independently reopen written copies, and keep machine-readable output free of promotional text.
+The MP3 commands are focused local companions to the browser viewer, editor, and remover. They accept files by consecutive MPEG Layer III frame headers—not by extension—never overwrite the source, independently reopen written copies, and keep machine-readable output free of promotional text.
 
 | Command | Focused local operation | Online experience |
 | --- | --- | --- |
-| `mp3-metadata-view` | Read supported tag containers and common ID3 fields | [MP3 Metadata Editor](https://metadataremover.ai/mp3-metadata-editor?utm_source=github&utm_medium=referral&utm_campaign=mp3_metadata_editor) |
+| `mp3-metadata-view` | Read supported tag containers and common ID3 fields | [MP3 Metadata Viewer](https://metadataremover.ai/mp3-metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=mp3_metadata_viewer) |
 | `mp3-metadata-edit` | Set or clear focused ID3 fields while preserving audio and untouched frames | [MP3 Metadata Editor](https://metadataremover.ai/mp3-metadata-editor?utm_source=github&utm_medium=referral&utm_campaign=mp3_metadata_editor) |
 | `mp3-metadata-remove` | Copy only the original MPEG audio range and drop supported surrounding tags | [MP3 Metadata Remover](https://metadataremover.ai/mp3-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=mp3_metadata_remover) |
 

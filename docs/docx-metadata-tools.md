@@ -5,6 +5,7 @@ The DOCX commands are focused automation companions to the browser tools. They o
 | Command | Focused local operation | Online experience |
 | --- | --- | --- |
 | `docx-metadata-view` | Read supported Word properties, identity attributes, and package boundaries | [DOCX Metadata Viewer](https://metadataremover.ai/docx-metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=docx_metadata_viewer) |
+| `docx-metadata-edit` | Set or clear selected Core Properties plus Company and Manager | [DOCX Metadata Editor](https://metadataremover.ai/docx-metadata-editor?utm_source=github&utm_medium=referral&utm_campaign=docx_metadata_editor) |
 | `docx-metadata-remove` | Clear supported properties and thumbnails; anonymize supported identities | [DOCX Metadata Remover](https://metadataremover.ai/docx-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=docx_metadata_remover) |
 
 ## Viewer
@@ -17,6 +18,26 @@ docx-metadata-view --json document.docx
 The viewer reports supported Core, Extended, and Custom Properties; comment and tracked-change authors and dates; modern comment identities; and document-thumbnail presence. It also reports counts or warnings for hidden-text markers, document variables, `DOCPROPERTY` fields, external relationships, embedded objects, Custom XML, printer settings, protection, tracked changes, signatures, macros, and ActiveX parts.
 
 Property values are capped at 64 KiB. Human output shortens long values; JSON retains the bounded value and a `truncated` flag.
+
+## Focused editor
+
+```bash
+docx-metadata-edit --title "Public proposal" --clear author document.docx
+docx-metadata-edit --company "Example Studio" --modified 2026-08-23T09:30:00+08:00 document.docx
+```
+
+The editor can add, replace, or clear the supported Core Properties `title`, `subject`, `creator`/author, `keywords`, `description`, `lastModifiedBy`, `revision`, `created`, `modified`, `lastPrinted`, `category`, `contentStatus`, `identifier`, `language`, and `version`. It also supports the Extended Properties `Company` and `Manager`.
+
+Date values require complete ISO 8601 input with an explicit timezone and are stored in normalized UTC form. Revision accepts decimal digits. Use `--clear <field>` instead of an empty string to remove a value.
+
+The command reopens the generated copy and verifies:
+
+- every requested value or clear operation;
+- semantic equality for unedited supported Core, Extended, and Custom Properties;
+- unchanged visible, deleted, field-code, and comment text;
+- byte-for-byte equality of every untouched expanded OOXML part.
+
+This CLI intentionally preserves existing Custom Properties, application/statistics fields, comment and revision identities, thumbnails, and all other non-target parts. It does not create a missing `docProps/core.xml` or `docProps/app.xml` part. The [online DOCX Metadata Editor](https://metadataremover.ai/docx-metadata-editor?utm_source=github&utm_medium=referral&utm_campaign=docx_metadata_editor) adds missing-part creation, supported type-safe existing Custom Property editing, and a visual diff.
 
 ## Remover
 
@@ -42,7 +63,7 @@ The ZIP container is recompressed, so the DOCX file hash and compressed byte lay
 - Source packages are capped at 25 MiB, expanded data at 100 MiB, each entry at 32 MiB, and entry count at 4,096.
 - Unsafe paths, duplicate entries, encrypted entries, unsupported compression, unsafe expansion ratios, multi-disk ZIP, and ZIP64 are rejected.
 - Only standard `.docx` main-document content types are accepted. Templates and macro-enabled formats are not treated as DOCX.
-- Detected OOXML signatures, VBA, and ActiveX block rewriting. Signature presence is structural detection, not cryptographic validation.
+- Detected OOXML signatures, VBA, and ActiveX block editing and removal. Signature presence is structural detection, not cryptographic validation.
 - Comment and tracked-change text is preserved. The command does not accept or reject revisions.
 - Hidden and visible text, headers, footers, links, attached templates, external relationships, embedded objects, Custom XML contents, document variables, printer settings, and protection settings are not deleted.
 - A missing supported field is not proof that a Word document contains no confidential, personal, hidden, or embedded information.

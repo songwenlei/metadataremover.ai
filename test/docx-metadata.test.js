@@ -6,6 +6,7 @@ import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 import { unzipSync, zipSync } from 'fflate';
 import {
+  editDocxMetadata,
   removeDocxMetadata,
   viewDocxMetadata,
 } from '../src/docx-metadata.js';
@@ -95,17 +96,64 @@ test('DOCX remover strips supported metadata and preserves document/comment text
   assert.equal('docProps/thumbnail.jpeg' in entries, false);
 });
 
+test('DOCX editor sets, adds, and clears focused properties while preserving content and identities', () => {
+  const source = docxFixture();
+  const beforeEntries = unzipSync(source);
+  const edited = editDocxMetadata(source, {
+    title: 'Public launch plan',
+    creator: null,
+    subject: 'External proposal',
+    keywords: 'public, proposal',
+    created: '2026-08-23T09:15:00+08:00',
+    company: 'Public Example Ltd',
+    manager: 'Release Manager',
+  });
+  const after = viewDocxMetadata(edited.buffer);
+  const afterEntries = unzipSync(edited.buffer);
+
+  assert.equal(edited.report.verified, true);
+  assert.equal(after.fields.find((field) => field.id === 'core:title')?.value, 'Public launch plan');
+  assert.equal(after.fields.some((field) => field.id === 'core:creator'), false);
+  assert.equal(after.fields.find((field) => field.id === 'core:subject')?.value, 'External proposal');
+  assert.equal(after.fields.find((field) => field.id === 'core:keywords')?.value, 'public, proposal');
+  assert.equal(after.fields.find((field) => field.id === 'core:created')?.value, '2026-08-23T01:15:00.000Z');
+  assert.equal(after.fields.find((field) => field.id === 'extended:Company')?.value, 'Public Example Ltd');
+  assert.equal(after.fields.find((field) => field.id === 'extended:Manager')?.value, 'Release Manager');
+  assert.equal(after.fields.find((field) => field.id === 'custom:2')?.value, 'CLIENT-2048');
+  assert.match(after.fields.find((field) => field.id === 'comments:authors')?.value ?? '', /Dana Commenter/);
+  assert.match(after.fields.find((field) => field.id === 'revisions:authors')?.value ?? '', /Carol Editor/);
+  assert.deepEqual(Buffer.from(afterEntries['word/document.xml']), Buffer.from(beforeEntries['word/document.xml']));
+  assert.deepEqual(Buffer.from(afterEntries['word/comments.xml']), Buffer.from(beforeEntries['word/comments.xml']));
+  assert.match(Buffer.from(afterEntries['docProps/core.xml']).toString(), /xsi:type="dcterms:W3CDTF"/);
+});
+
+test('DOCX editor validates dates and preserves missing property-part boundaries', () => {
+  assert.throws(
+    () => editDocxMetadata(docxFixture(), { created: '2026-08-23' }),
+    /complete ISO 8601 date with a timezone/,
+  );
+  const entries = unzipSync(docxFixture());
+  delete entries['docProps/app.xml'];
+  const noApp = Buffer.from(zipSync(entries, { level: 6 }));
+  assert.throws(
+    () => editDocxMetadata(noApp, { company: 'Example' }),
+    /does not create a missing docProps\/app\.xml/,
+  );
+});
+
 test('DOCX signatures block rewriting without blocking inspection', () => {
   const signed = docxFixture({ '_xmlsignatures/sig1.xml': Buffer.from('<Signature/>') });
   const report = viewDocxMetadata(signed);
   assert.equal(report.rewriteAllowed, false);
   assert.match(report.blockingReasons.join(' '), /signature/i);
+  assert.throws(() => editDocxMetadata(signed, { title: 'Changed' }), /invalidate the signed package/i);
   assert.throws(() => removeDocxMetadata(signed), /invalidate the signed package/i);
 });
 
 test('DOCX CLIs keep machine output promotional-link free and protect the original', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'docx-metadata-'));
   const input = join(directory, 'private.docx');
+  const editedOutput = join(directory, 'edited.docx');
   const output = join(directory, 'public.docx');
   await writeFile(input, docxFixture());
 
@@ -115,6 +163,21 @@ test('DOCX CLIs keep machine output promotional-link free and protect the origin
   assert.equal(viewRun.status, 0, viewRun.stderr);
   assert.doesNotMatch(viewRun.stdout, /metadataremover\.ai/);
   assert.equal(JSON.parse(viewRun.stdout).results[0].format, 'DOCX');
+
+  const editRun = spawnSync(process.execPath, [
+    './bin/docx-metadata-edit.js', '--json', '--title', 'Public proposal', '--clear', 'author',
+    '--company', 'Public Studio', '--output', editedOutput, input,
+  ], {
+    cwd: new URL('..', import.meta.url), encoding: 'utf8',
+  });
+  assert.equal(editRun.status, 0, editRun.stderr);
+  assert.doesNotMatch(editRun.stdout, /metadataremover\.ai/);
+  assert.equal(JSON.parse(editRun.stdout).result.verified, true);
+  const editedReport = viewDocxMetadata(await readFile(editedOutput));
+  assert.equal(editedReport.fields.find((field) => field.id === 'core:title')?.value, 'Public proposal');
+  assert.equal(editedReport.fields.some((field) => field.id === 'core:creator'), false);
+  assert.equal(editedReport.fields.find((field) => field.id === 'extended:Company')?.value, 'Public Studio');
+  assert.equal(editedReport.fields.find((field) => field.id === 'custom:2')?.value, 'CLIENT-2048');
 
   const removeRun = spawnSync(process.execPath, ['./bin/docx-metadata-remove.js', '--json', '--output', output, input], {
     cwd: new URL('..', import.meta.url), encoding: 'utf8',
