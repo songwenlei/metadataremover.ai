@@ -16,6 +16,8 @@ Prefer a browser? The online tools add visual review and more field-level choice
 | --- | --- | --- |
 | `metadata-check` | Find privacy-sensitive metadata categories in build scripts and sharing checks | No |
 | `metadata-view` | Review supported EXIF/GPS values, text metadata, containers, and provenance markers; export JSON or CSV | No |
+| `metadata-edit` | Update or clear existing fixed-size EXIF title, creator, copyright, and date fields | Writes a new copy |
+| `metadata-remove` | Remove supported image privacy metadata while preserving ICC color profiles | Writes a new copy |
 | `ai-metadata-remove` | Remove recognized prompts, parameters, and workflow containers while keeping unrelated metadata | Writes a new copy |
 | `exif-remove` | Remove complete EXIF containers from a verified JPEG, PNG, or WebP copy | Writes a new copy |
 | `pdf-metadata-view` | Audit PDF Info, readable document XMP, and signature boundaries | No |
@@ -25,6 +27,7 @@ Prefer a browser? The online tools add visual review and more field-level choice
 | `docx-metadata-edit` | Set or clear selected Word Core Properties plus Company and Manager | Writes a new copy |
 | `docx-metadata-remove` | Remove supported properties and thumbnails; anonymize supported author attributes | Writes a new copy |
 | `video-metadata-view` | Read focused MP4/MOV user data, timestamps, XMP, and WebM Info/Tags | No |
+| `video-metadata-edit` | Update or clear existing descriptive tags without changing container length or media payloads | Writes a new copy |
 | `video-metadata-remove` | Apply same-length MP4/MOV `free` or WebM `Void` patches without transcoding media | Writes a new copy |
 | `mp3-metadata-view` | Audit ID3v2.3/v2.4, ID3v1, readable APEv2, Lyrics3v2 presence, and cover art | No |
 | `mp3-metadata-edit` | Set or clear focused ID3 text fields and APIC cover art while preserving MPEG audio | Writes a new copy |
@@ -42,6 +45,8 @@ npm link
 
 metadata-check photo.jpg
 metadata-view photo.jpg
+metadata-edit --title "Public photo" --clear creator photo.jpg
+metadata-remove photo.jpg
 ai-metadata-remove generated.png
 exif-remove photo.jpg
 pdf-metadata-view report.pdf
@@ -51,6 +56,7 @@ docx-metadata-view proposal.docx
 docx-metadata-edit --title "Public proposal" --clear author proposal.docx
 docx-metadata-remove proposal.docx
 video-metadata-view clip.mp4
+video-metadata-edit --title "Public clip" --clear comment clip.mp4
 video-metadata-remove clip.mp4
 mp3-metadata-view episode.mp3
 mp3-metadata-edit --title "Public episode" --clear comment episode.mp3
@@ -62,6 +68,8 @@ You can also run every command directly from the cloned repository:
 ```bash
 node ./bin/metadata-check.js photo.jpg
 node ./bin/metadata-view.js photo.jpg
+node ./bin/metadata-edit.js --title "Public photo" photo.jpg
+node ./bin/metadata-remove.js photo.jpg
 node ./bin/ai-metadata-remove.js generated.png
 node ./bin/exif-remove.js photo.jpg
 node ./bin/pdf-metadata-view.js report.pdf
@@ -71,6 +79,7 @@ node ./bin/docx-metadata-view.js proposal.docx
 node ./bin/docx-metadata-edit.js --title "Public proposal" proposal.docx
 node ./bin/docx-metadata-remove.js proposal.docx
 node ./bin/video-metadata-view.js clip.mp4
+node ./bin/video-metadata-edit.js --title "Public clip" clip.mp4
 node ./bin/video-metadata-remove.js clip.mp4
 node ./bin/mp3-metadata-view.js episode.mp3
 node ./bin/mp3-metadata-edit.js --title "Public episode" episode.mp3
@@ -124,6 +133,28 @@ It reports supported EXIF and GPS values, derived decimal coordinates, JPEG comm
 For a visual, searchable report with local JSON and CSV export, open the [free browser-based Metadata Viewer](https://metadataremover.ai/metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=metadata_viewer).
 
 See [Metadata Viewer technical limits](docs/metadata-view.md).
+
+## Image Metadata Remover and Editor
+
+`metadata-remove` is the focused general-cleanup companion to the website homepage. It removes complete supported EXIF, XMP, IPTC, JPEG comment, PNG text, and C2PA/JUMBF containers from one JPEG, PNG, or WebP copy. ICC profiles remain because they affect color rendering rather than representing a privacy finding.
+
+```bash
+metadata-remove photo.jpg
+metadata-remove --output share.webp source.webp
+```
+
+The command does not decode or re-encode pixels. It refuses EXIF Orientation values other than `1` unless `--allow-orientation-change` is supplied, because deleting that instruction can change how the same pixels display. The [online Metadata Remover](https://metadataremover.ai/?utm_source=github&utm_medium=referral&utm_campaign=metadata_remover) adds visual review, field-level policies, and browser-based orientation handling.
+
+`metadata-edit` updates or clears four existing EXIF ASCII fields: ImageDescription (`--title`), Artist (`--creator`), Copyright, and DateTime (`--date`). It writes into the field's existing byte slot, keeps the complete file length unchanged, recalculates a changed PNG `eXIf` CRC, and reads the requested values back before returning.
+
+```bash
+metadata-edit --title "Public photo" --creator "Example Studio" photo.jpg
+metadata-edit --clear copyright --output public.png source.png
+```
+
+The focused editor does not add missing fields, expand an existing field slot, write Unicode, edit GPS, rebuild XMP/IPTC, or process multiple files. Use the [online Image Metadata Editor](https://metadataremover.ai/metadata-editor?utm_source=github&utm_medium=referral&utm_campaign=metadata_editor) for those workflows.
+
+See [Image metadata write tools technical limits](docs/image-metadata-tools.md).
 
 ## AI Metadata Remover
 
@@ -244,6 +275,15 @@ video-metadata-view recording.mov
 video-metadata-view --json delivery.webm
 ```
 
+`video-metadata-edit` updates or clears existing title, artist, comment, copyright, and descriptive date tags. New UTF-8 values must fit their existing MP4/MOV atom or WebM element byte slots, so the file length and media offsets stay unchanged.
+
+```bash
+video-metadata-edit --title "Public clip" --clear comment recording.mov
+video-metadata-edit --artist "Example Studio" --output release.webm source.webm
+```
+
+The command reopens the result, checks every requested value, and verifies the standard `mdat` or Cluster media-payload SHA-256 hash. It does not add missing tags or rebuild variable-length metadata; the [online Video Metadata Editor](https://metadataremover.ai/video-metadata-editor?utm_source=github&utm_medium=referral&utm_campaign=video_metadata_editor) provides that fuller workflow.
+
 `video-metadata-remove` replaces supported MP4/MOV metadata boxes with same-length `free` boxes, clears supported container timestamps, and replaces WebM Tags, Attachments, and supported Info values with same-length `Void` elements. It then reopens the output and verifies container type, byte length, readable fields, and the hash of standard `mdat` or Cluster media payloads.
 
 ```bash
@@ -295,10 +335,10 @@ See [MP3 metadata tools technical limits](docs/mp3-metadata-tools.md).
 - PDF write commands refuse signed and encrypted files; signature detection is not cryptographic validation.
 - PDF page content, annotations, attachments, embedded files, JavaScript, hidden layers, and embedded-image metadata are outside the focused PDF commands.
 - DOCX cleanup refuses signed, macro-enabled, encrypted, ZIP64, and non-DOCX packages. It preserves hidden/visible content, external relationships, embedded objects, and Custom XML.
-- Video cleanup uses same-length container patches and verifies standard media payload hashes, but unknown atoms and non-container signals may remain.
+- Video editing and cleanup use same-length container patches and verify standard media payload hashes, but unknown atoms and non-container signals may remain.
 - MP3 cleanup verifies the complete MPEG byte-range hash but does not inspect or remove filenames, spoken names, audible watermarks, DRM, copyright protection, or service-side records.
 - `ai-metadata-remove` targets recognized PNG text and XMP containers only; it does not remove separate EXIF, C2PA, ICC, comments, or platform-side AI labels.
-- `exif-remove` removes EXIF only; use the [full browser cleaner](https://metadataremover.ai/?utm_source=github&utm_medium=referral&utm_campaign=metadata_checker) when you also need to remove supported XMP, IPTC, AI text, comments, or provenance containers.
+- `exif-remove` removes EXIF only; use `metadata-remove` for the supported general local cleanup set or the [full browser cleaner](https://metadataremover.ai/?utm_source=github&utm_medium=referral&utm_campaign=metadata_checker) for visual review and field-level choices.
 - Machine-readable JSON and CSV output never contains promotional links.
 
 ## Project direction

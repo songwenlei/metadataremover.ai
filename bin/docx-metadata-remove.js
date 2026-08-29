@@ -8,7 +8,7 @@ import {
   removeDocxMetadata,
 } from '../src/docx-metadata.js';
 
-const VERSION = '0.7.0';
+const VERSION = '0.8.0';
 const HELP = `DOCX Metadata Remover
 
 Remove supported Word properties, preview thumbnails, and identity attributes from a verified copy.

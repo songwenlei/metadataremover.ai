@@ -9,7 +9,7 @@ import {
   inspectImage,
 } from '../src/inspector.js';
 
-const VERSION = '0.7.0';
+const VERSION = '0.8.0';
 
 const HELP = `Image Metadata Privacy Checker
 

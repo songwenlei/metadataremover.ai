@@ -8,7 +8,7 @@ import {
   editDocxMetadata,
 } from '../src/docx-metadata.js';
 
-const VERSION = '0.7.0';
+const VERSION = '0.8.0';
 const FLAG_FIELDS = {
   '--title': 'title',
   '--subject': 'subject',

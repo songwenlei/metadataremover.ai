@@ -8,7 +8,7 @@ import {
   removeVideoMetadata,
 } from '../src/video-metadata.js';
 
-const VERSION = '0.7.0';
+const VERSION = '0.8.0';
 const HELP = `Video Metadata Remover
 
 Remove supported MP4, MOV, and WebM metadata with same-length container patches.

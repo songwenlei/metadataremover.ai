@@ -8,7 +8,7 @@ import {
   viewMp3Metadata,
 } from '../src/mp3-metadata.js';
 
-const VERSION = '0.7.0';
+const VERSION = '0.8.0';
 const HELP = `MP3 Metadata Viewer
 
 Inspect supported ID3v2.3, ID3v2.4, ID3v1, APEv2, and Lyrics3v2 tags locally.

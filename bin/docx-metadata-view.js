@@ -8,7 +8,7 @@ import {
   viewDocxMetadata,
 } from '../src/docx-metadata.js';
 
-const VERSION = '0.7.0';
+const VERSION = '0.8.0';
 const HELP = `DOCX Metadata Viewer
 
 Inspect Word document properties, comment identities, revision authors, and package boundaries locally.

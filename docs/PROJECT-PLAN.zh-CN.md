@@ -27,14 +27,14 @@ README、工具文档、示例、Release Notes 和包元数据都可以加入站
 
 ## 已同步工具
 
-Image Metadata Privacy Checker 对应网站首页的图片元数据能力，负责本地检查：
+Image Metadata Privacy Checker 负责本地检查：
 
 - JPEG：EXIF、GPS、XMP、IPTC、Comment、JUMBF；
 - PNG：eXIf、文本块、XMP、AI 生成参数、C2PA `caBX`；
 - WebP：EXIF、XMP、AI 生成参数和 C2PA；
 - ICC 色彩配置只做信息提示，不作为隐私风险。
 
-检查器发现风险后，引导用户前往首页的在线清理器。机器可读的 JSON 输出不包含推广链接。
+检查器发现风险后，可以交给精简的本地通用清理命令，也可以引导用户前往首页完成可视化清理。机器可读的 JSON 输出不包含推广链接。
 
 网站第一批新增的三个公开工具已同步到本地：
 
@@ -42,11 +42,19 @@ Image Metadata Privacy Checker 对应网站首页的图片元数据能力，负�
 - `ai-metadata-remove` 对应 AI Metadata Remover，只移除识别到的 AI 标记 PNG 文本与 XMP 容器，保留独立 EXIF、IPTC、C2PA 和 ICC，并复扫验证；
 - `exif-remove` 对应 EXIF Remover，无损移除 JPEG APP1、PNG `eXIf`、WebP `EXIF` 容器并复扫验证；非标准 Orientation 默认拒绝，避免静默改变显示方向。
 
+2026-08-29 又补齐首页通用清理与 Image Metadata Editor 的精简对应命令：
+
+- `metadata-remove`：移除已支持的 EXIF、XMP、IPTC、JPEG Comment、PNG 文本和 C2PA/JUMBF 容器，保留 ICC 与像素载荷；非标准 Orientation 默认拒绝；
+- `metadata-edit`：只修改或清除源文件中已经存在的 IFD0 EXIF ASCII 标题、作者、版权和日期槽位；不新增字段、不扩容、不写 Unicode/GPS/XMP/IPTC，写入后复读全部目标值；
+- 两者一次只处理一个文件；批量、可视化 diff、新增字段、变长值和更完整的跨命名空间编辑继续保留在线版。
+
 对应在线入口：
 
 - `https://metadataremover.ai/metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=metadata_viewer`
 - `https://metadataremover.ai/ai-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=ai_metadata_remover`
 - `https://metadataremover.ai/exif-remover?utm_source=github&utm_medium=referral&utm_campaign=exif_remover`
+- `https://metadataremover.ai/?utm_source=github&utm_medium=referral&utm_campaign=metadata_remover`
+- `https://metadataremover.ai/metadata-editor?utm_source=github&utm_medium=referral&utm_campaign=metadata_editor`
 
 2026-08-06 上线的 PDF 查看、编辑和移除能力也已经同步为三个精简命令：
 
@@ -62,8 +70,6 @@ Image Metadata Privacy Checker 对应网站首页的图片元数据能力，负�
 - `https://metadataremover.ai/pdf-metadata-editor?utm_source=github&utm_medium=referral&utm_campaign=pdf_metadata_editor`
 - `https://metadataremover.ai/pdf-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=pdf_metadata_remover`
 
-图片 Metadata Editor 暂不复制为不完整的命令。跨 JPEG、PNG、WebP 安全写入 EXIF/GPS/XMP，同时保留方向、未知字段、IPTC、色彩和来源容器，需要经过独立的容器写入与像素方向验证；在这些条件具备前，只保留在线编辑入口，避免发布会静默丢字段或改变显示方向的半成品。
-
 2026-08-08 上线的 DOCX 查看/移除能力与 2026-08-22 上线的编辑能力已同步为三个精简命令：
 
 - `docx-metadata-view`：读取 Core、Extended、Custom Properties，评论/修订身份与时间，并报告隐藏文本、外部关系、嵌入对象、Custom XML、签名和宏边界；
@@ -77,19 +83,19 @@ Image Metadata Privacy Checker 对应网站首页的图片元数据能力，负�
 - `https://metadataremover.ai/docx-metadata-editor?utm_source=github&utm_medium=referral&utm_campaign=docx_metadata_editor`
 - `https://metadataremover.ai/docx-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=docx_metadata_remover`
 
-2026-08-09 上线的视频能力已同步为查看与清理两个精简命令：
+2026-08-09 上线的视频能力已同步为查看、编辑与清理三个精简命令：
 
 - `video-metadata-view`：读取 MP4/MOV 常见 user-data、时间与 Adobe XMP UUID，以及 WebM Info、SimpleTags 和附件存在性；
+- `video-metadata-edit`：修改或清除源文件中已有的 Title、Artist、Comment、Copyright 与描述性 Date；新值必须装入原字节槽，保持容器长度与媒体偏移不变，并复读目标值和核对 `mdat`/Cluster 哈希；
 - `video-metadata-remove`：用同长度 MP4/MOV `free` box 或 WebM `Void` 替换受支持元数据，不转码、不移动媒体偏移，并复开验证容器、长度、字段和 `mdat`/Cluster 媒体载荷哈希；
-- 未知私有 atom、codec bitstream、画面、声音、烧录文字和文件系统时间明确保留在边界之外。
+- 编辑命令不新增 tag、不扩容、不重建 fast-start offsets 或 WebM Tags；这些完整能力继续保留在线版；
+- 三个命令都不含批量；未知私有 atom、codec bitstream、画面、声音、烧录文字和文件系统时间明确保留在边界之外。
 
 对应在线入口：
 
 - `https://metadataremover.ai/video-metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=video_metadata_viewer`
 - `https://metadataremover.ai/video-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=video_metadata_remover`
 - `https://metadataremover.ai/video-metadata-editor?utm_source=github&utm_medium=referral&utm_campaign=video_metadata_editor`
-
-视频 Metadata Editor 暂不发布精简 CLI。可变长度字段重建会影响 fast-start MP4 的 chunk offsets，WebM 也需要完整 Tags 重建与播放验证；在这些写入和验证边界独立成熟前，编辑继续保留在线版。
 
 MP3 编辑和移除能力已在 2026-08-12 后同步为三个独立可用的精简命令；2026-08-22 上线的独立 Viewer 页面也已补齐对应入口：
 
@@ -107,14 +113,13 @@ MP3 编辑和移除能力已在 2026-08-12 后同步为三个独立可用的精�
 
 ## 后续路线图
 
-1. 本地通用 `clean`：在 EXIF-only 之外，无损移除更多支持的图片隐私元数据；
-2. 安全的图片 Info/XMP 编辑子集，在实现前先补齐跨格式保留与方向测试；
-3. `verify`：对比清理前后并生成验证报告；
-4. `scan`：递归扫描目录中的图片和 PDF 风险；
-5. GitHub Action：阻止含敏感元数据的文件进入仓库；
-6. Pre-commit Hook：提交前自动检查；
-7. C2PA/JUMBF 与 PDF 签名边界检测增强，但在实现密码学验证前不宣称签名有效性验证；
-8. 网站新增格式或能力后，同步增加对应命令或工具；编辑类写入必须先具备独立读回与容器/媒体验证。
+1. `verify`：对比清理前后并生成验证报告；
+2. `scan`：递归扫描目录中的图片和 PDF 风险；
+3. GitHub Action：阻止含敏感元数据的文件进入仓库；
+4. Pre-commit Hook：提交前自动检查；
+5. C2PA/JUMBF 与 PDF 签名边界检测增强，但在实现密码学验证前不宣称签名有效性验证；
+6. 网站新增格式或能力后，同步增加对应的精简命令或工具；编辑类写入必须先具备独立读回与容器/媒体验证；
+7. 网站 Batch Workspace 不复制到本仓库；命令保持单文件或开发者自行显式编排的定位。
 
 ## 网站链接规范
 

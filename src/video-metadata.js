@@ -2,6 +2,9 @@ import { createHash } from 'node:crypto';
 
 export const ONLINE_VIDEO_METADATA_VIEWER_URL = 'https://metadataremover.ai/video-metadata-viewer?utm_source=github&utm_medium=referral&utm_campaign=video_metadata_viewer';
 export const ONLINE_VIDEO_METADATA_REMOVER_URL = 'https://metadataremover.ai/video-metadata-remover?utm_source=github&utm_medium=referral&utm_campaign=video_metadata_remover';
+export const ONLINE_VIDEO_METADATA_EDITOR_URL = 'https://metadataremover.ai/video-metadata-editor?utm_source=github&utm_medium=referral&utm_campaign=video_metadata_editor';
+
+export const EDITABLE_VIDEO_FIELDS = ['title', 'artist', 'comment', 'copyright', 'date'];
 
 const MAX_VIDEO_BYTES = 4 * 1024 * 1024 * 1024;
 const MAX_TEXT_BYTES = 64 * 1024;
@@ -28,6 +31,13 @@ const MP4_DIRECT_METADATA = new Map([
   ['©xyz', ['Location', 'high']],
 ]);
 const MP4_TIME_BOXES = new Set(['mvhd', 'tkhd', 'mdhd']);
+const MP4_EDIT_ATOMS = new Map([
+  ['©nam', 'title'],
+  ['©ART', 'artist'],
+  ['©cmt', 'comment'],
+  ['©cpy', 'copyright'],
+  ['©day', 'date'],
+]);
 
 const WEBM_SEGMENT_ID = '18538067';
 const WEBM_INFO_ID = '1549a966';
@@ -43,6 +53,13 @@ const WEBM_INFO_FIELDS = new Map([
   ['4461', ['UTC creation date', 'medium', 'date']],
   ['4d80', ['Muxing application', 'medium', 'text']],
   ['5741', ['Writing application', 'medium', 'text']],
+]);
+const WEBM_EDIT_TAGS = new Map([
+  ['TITLE', 'title'],
+  ['ARTIST', 'artist'],
+  ['COMMENT', 'comment'],
+  ['COPYRIGHT', 'copyright'],
+  ['DATE_RECORDED', 'date'],
 ]);
 
 export class VideoMetadataError extends Error {
@@ -571,6 +588,241 @@ function validatePatches(patches, sourceSize) {
     cursor = patch.end;
   }
   return sorted;
+}
+
+function normalizeVideoChanges(changes) {
+  const normalized = {};
+  for (const [key, rawValue] of Object.entries(changes ?? {})) {
+    if (!EDITABLE_VIDEO_FIELDS.includes(key)) throw new VideoMetadataError('unsupported_field', `Unsupported video metadata field: ${key}`);
+    if (rawValue === null) normalized[key] = null;
+    else {
+      const value = String(rawValue);
+      if (!value) throw new VideoMetadataError('empty_value', `Use --clear ${key} to remove a field.`);
+      if (/[\u0000-\u001f\u007f]/.test(value)) throw new VideoMetadataError('unsupported_text', `${key} contains a control character that this focused editor cannot store safely.`);
+      if (Buffer.byteLength(value, 'utf8') > 16 * 1024) throw new VideoMetadataError('value_too_long', `${key} exceeds the 16 KiB per-field safety limit.`);
+      normalized[key] = value;
+    }
+  }
+  if (!Object.keys(normalized).length) throw new VideoMetadataError('no_changes', 'Change or clear at least one supported video metadata field.');
+  return normalized;
+}
+
+function textPatch(slot, value) {
+  const encoded = value === null ? Buffer.alloc(0) : Buffer.from(value, 'utf8');
+  const length = slot.end - slot.start;
+  if (encoded.length > length) {
+    throw new VideoMetadataError(
+      'value_too_long',
+      `${slot.key} needs ${encoded.length} bytes but its existing container slot has ${length}. Use the online editor for variable-length metadata rebuilding.`,
+    );
+  }
+  const replacement = Buffer.alloc(length, 0x20);
+  encoded.copy(replacement);
+  return { ...slot, replacement, label: `${slot.key} metadata field`, kind: 'metadata' };
+}
+
+function mp4TextSlot(buffer, box, key, path) {
+  let valueStart = box.dataStart;
+  let valueEnd = box.end;
+  try {
+    const child = mp4BoxHeader(buffer, box.dataStart, box.end);
+    if (child?.type === 'data') {
+      valueStart = Math.min(child.end, child.dataStart + 8);
+      valueEnd = child.end;
+    } else if (child) return null;
+  } catch {
+    // A raw QuickTime user-data atom uses the whole payload as its text slot.
+  }
+  if (valueStart > valueEnd) return null;
+  return {
+    key,
+    start: valueStart,
+    end: valueEnd,
+    path: path.join('/'),
+    before: cleanText(buffer.subarray(valueStart, valueEnd)).value,
+  };
+}
+
+function planMp4Edits(buffer, changes) {
+  const slots = [];
+  let foundMoov = false;
+
+  function scanRange(start, end, path = [], mode = 'normal') {
+    let cursor = start;
+    while (cursor + 8 <= end) {
+      const box = mp4BoxHeader(buffer, cursor, end);
+      if (!box) break;
+      const boxPath = [...path, box.type];
+      if (box.type === 'moov') foundMoov = true;
+      const key = MP4_EDIT_ATOMS.get(box.type);
+      if (key && Object.hasOwn(changes, key)) {
+        const slot = mp4TextSlot(buffer, box, key, boxPath);
+        if (slot) slots.push(slot);
+      }
+      if (box.type === 'udta') scanRange(box.dataStart, box.end, boxPath);
+      else if (box.type === 'meta') scanRange(Math.min(box.end, box.dataStart + 4), box.end, boxPath);
+      else if (box.type === 'ilst') scanRange(box.dataStart, box.end, boxPath, 'ilst-item');
+      else if (MP4_CONTAINER_BOXES.has(box.type)) scanRange(box.dataStart, box.end, boxPath, mode);
+      cursor = box.end;
+    }
+  }
+  scanRange(0, buffer.length);
+  if (!foundMoov) throw new VideoMetadataError('malformed_video', 'The MP4 or MOV does not expose a standard moov box.');
+  return slots;
+}
+
+function findWebmSegment(buffer) {
+  let cursor = 0;
+  while (cursor < buffer.length) {
+    const element = ebmlHeader(buffer, cursor, buffer.length);
+    if (!element) break;
+    if (element.id === WEBM_SEGMENT_ID) return element;
+    cursor = element.end;
+  }
+  throw new VideoMetadataError('malformed_video', 'The WebM does not expose a standard editable Segment.');
+}
+
+function planWebmEdits(buffer, changes) {
+  const segment = findWebmSegment(buffer);
+  const slots = [];
+
+  function inspectSimpleTag(element, path) {
+    let name = '';
+    let valueElement = null;
+    const nested = [];
+    let cursor = element.dataStart;
+    while (cursor < element.end) {
+      const child = ebmlHeader(buffer, cursor, element.end);
+      if (!child) break;
+      if (child.id === WEBM_TAG_NAME_ID) name = cleanText(buffer.subarray(child.dataStart, child.end)).value.toUpperCase();
+      else if (child.id === WEBM_TAG_STRING_ID) valueElement = child;
+      else if (child.id === WEBM_SIMPLE_TAG_ID) nested.push(child);
+      cursor = child.end;
+    }
+    const key = WEBM_EDIT_TAGS.get(name);
+    if (key && valueElement && Object.hasOwn(changes, key)) {
+      slots.push({
+        key,
+        start: valueElement.dataStart,
+        end: valueElement.end,
+        path: `${path}/${name}`,
+        before: cleanText(buffer.subarray(valueElement.dataStart, valueElement.end)).value,
+      });
+    }
+    for (const child of nested) inspectSimpleTag(child, `${path}/${name || 'nested'}`);
+  }
+
+  function inspectTags(element) {
+    const stack = [{ start: element.dataStart, end: element.end, path: 'Segment/Tags' }];
+    while (stack.length) {
+      const range = stack.pop();
+      let cursor = range.start;
+      while (cursor < range.end) {
+        const child = ebmlHeader(buffer, cursor, range.end);
+        if (!child) break;
+        if (child.id === WEBM_SIMPLE_TAG_ID) inspectSimpleTag(child, range.path);
+        else if (['7373', '63c0'].includes(child.id)) stack.push({ start: child.dataStart, end: child.end, path: range.path });
+        cursor = child.end;
+      }
+    }
+  }
+
+  let cursor = segment.dataStart;
+  while (cursor < segment.end) {
+    const element = ebmlHeader(buffer, cursor, segment.end);
+    if (!element) break;
+    if (element.id === WEBM_TAGS_ID) inspectTags(element);
+    else if (element.id === WEBM_INFO_ID && Object.hasOwn(changes, 'title')) {
+      let infoCursor = element.dataStart;
+      while (infoCursor < element.end) {
+        const child = ebmlHeader(buffer, infoCursor, element.end);
+        if (!child) break;
+        if (child.id === '7ba9') {
+          slots.push({
+            key: 'title',
+            start: child.dataStart,
+            end: child.end,
+            path: 'Segment/Info/Title',
+            before: cleanText(buffer.subarray(child.dataStart, child.end)).value,
+          });
+        }
+        infoCursor = child.end;
+      }
+    }
+    cursor = element.end;
+  }
+  return slots;
+}
+
+function videoFieldKey(field) {
+  const name = field.name.toUpperCase();
+  if (name === 'TITLE' || name === 'SEGMENT TITLE') return 'title';
+  if (name === 'ARTIST') return 'artist';
+  if (name === 'COMMENT') return 'comment';
+  if (name === 'COPYRIGHT') return 'copyright';
+  if (name === 'DATE' || name === 'DATE_RECORDED') return 'date';
+  return null;
+}
+
+export function editVideoMetadata(input, changes) {
+  const buffer = asBuffer(input);
+  const signature = detectFormat(buffer);
+  const normalized = normalizeVideoChanges(changes);
+  const before = viewVideoMetadata(buffer);
+  const slots = signature.kind === 'webm' ? planWebmEdits(buffer, normalized) : planMp4Edits(buffer, normalized);
+  const missing = Object.keys(normalized).filter((key) => !slots.some((slot) => slot.key === key));
+  if (missing.length) {
+    throw new VideoMetadataError('missing_field', `The source has no editable ${missing.join(', ')} tag. This focused command changes existing tags only.`);
+  }
+  const operations = Object.entries(normalized).map(([key, value]) => {
+    const matches = slots.filter((slot) => slot.key === key);
+    const after = value ?? '';
+    return { key, action: value === null ? 'cleared' : 'updated', before: matches[0].before, after, changed: matches.some((slot) => slot.before !== after) };
+  });
+  if (!operations.some((operation) => operation.changed)) throw new VideoMetadataError('no_changes', 'The requested values already match the source metadata.');
+  const patches = validatePatches(
+    slots
+      .filter((slot) => slot.before !== (normalized[slot.key] ?? ''))
+      .map((slot) => textPatch(slot, normalized[slot.key])),
+    buffer.length,
+  );
+  const output = Buffer.from(buffer);
+  for (const patch of patches) patch.replacement.copy(output, patch.start);
+  const after = viewVideoMetadata(output);
+  const checks = [
+    { id: 'same-length', passed: output.length === buffer.length, detail: `${buffer.length} bytes before and after.` },
+    { id: 'same-container', passed: before.container === after.container, detail: `${after.format} signature remained readable.` },
+    { id: 'media-payload', passed: Boolean(before.mediaPayloadSha256) && before.mediaPayloadSha256 === after.mediaPayloadSha256, detail: before.mediaPayloadSha256 ? 'Media payload hash stayed unchanged.' : 'No standard mdat or Cluster payload was available for hashing.' },
+  ];
+  for (const [key, value] of Object.entries(normalized)) {
+    const fields = after.fields.filter((field) => videoFieldKey(field) === key);
+    const expected = value ?? '';
+    checks.push({
+      id: `field-${key}`,
+      passed: value === null ? fields.length === 0 : fields.length > 0 && fields.every((field) => field.value === expected),
+      detail: value === null ? `${key} no longer appears in focused readback.` : `${key} read back as the requested value.`,
+    });
+  }
+  if (!checks.every((check) => check.passed)) {
+    throw new VideoMetadataError('verification_failed', 'The edited video did not pass same-length, container, media-payload, and requested-field readback verification.');
+  }
+  return {
+    buffer: output,
+    report: {
+      schemaVersion: 1,
+      format: after.format,
+      container: after.container,
+      inputBytes: buffer.length,
+      outputBytes: output.length,
+      changedFields: operations.filter((operation) => operation.changed).map(({ changed, ...operation }) => operation),
+      rewrittenAreas: patches.map((patch) => ({ path: patch.path, byteLength: patch.end - patch.start, field: patch.key })),
+      mediaPayloadSha256: after.mediaPayloadSha256,
+      verified: true,
+      checks,
+      warnings: before.warnings,
+      limitations: after.limitations,
+    },
+  };
 }
 
 export function removeVideoMetadata(input) {
