@@ -187,3 +187,12 @@ test('DOCX CLIs keep machine output promotional-link free and protect the origin
   assert.equal(JSON.parse(removeRun.stdout).result.verified, true);
   assert.equal(viewDocxMetadata(await readFile(output)).fields.length, 0);
 });
+
+test('DOCX operations reject malformed XML after parser security upgrade', () => {
+  const source = docxFixture({
+    'word/document.xml': Buffer.from('<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body></w:body trailing></w:document>'),
+  });
+  for (const operation of [viewDocxMetadata, removeDocxMetadata, (input) => editDocxMetadata(input, { title: 'Updated' })]) {
+    assert.throws(() => operation(source), /malformed XML|invalid|tag/i);
+  }
+});
